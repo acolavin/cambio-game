@@ -1,0 +1,58 @@
+import React from 'react';
+import GameRoom from './GameRoom';
+import { SocketContext } from './common';
+import Login from './Login';
+
+
+class App extends React.Component {
+    static contextType = SocketContext
+
+    constructor(props) {
+        super(props);
+        this.state = {page: 'login', connected: false, token: undefined};
+    }
+
+    componentDidMount() {
+        this.context.on("valid_username", (json) => this.setState({page: 'game', ...json}));
+        this.context.on("connect", () => this.setState({connected: true}));
+    }
+
+    render() {
+        return (
+
+            <div className="App">
+                {
+                    this.state.page === 'login' && <Login />
+                }
+                {
+                    this.state.page === 'game' && <GameRoom token={this.state.token} roomid={this.state.roomid} />
+                }
+                Connected ? {this.state.connected.toString()}
+                <GameLog logs={[]}/>
+            </div>
+
+        );
+    }
+}
+
+class GameLog extends React.Component {
+    static contextType = SocketContext;
+
+    constructor(props) {
+        super(props);
+        this.state = {logs: props.logs};
+    }
+
+    componentDidMount() {
+        this.context.on("game_log", (data) => this.setState((state) => {
+            return {logs: state.logs.concat(data)}
+        }))
+    }
+
+    render() {
+        return this.state.logs.map((log, index) =>
+            <div key={index}>Log: {log}<br/></div>
+        )
+    }
+}
+export default App;
