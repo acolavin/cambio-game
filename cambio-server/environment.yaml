@@ -1,0 +1,10 @@
+name: cambio
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - flask=1.1
+  - flask-socketio=3.3
+  - python=3.8
+  - tornado=6.0
+
