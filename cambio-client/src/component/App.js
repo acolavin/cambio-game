@@ -1,4 +1,5 @@
 import React from 'react';
+import './App.css';
 import GameRoom from './GameRoom';
 import { SocketContext } from './common';
 import Login from './Login';
@@ -27,8 +28,8 @@ class App extends React.Component {
                 {
                     this.state.page === 'game' && <GameRoom token={this.state.token} roomid={this.state.roomid} />
                 }
-                Connected ? {this.state.connected.toString()}
-                <GameLog logs={[]}/>
+                <div className="Status">Connected ? {this.state.connected.toString()}</div>
+                <div className="GameLog" ><GameLog logs={["This is the logs"]}/></div>
             </div>
 
         );

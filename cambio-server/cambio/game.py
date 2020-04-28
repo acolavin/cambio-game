@@ -9,35 +9,41 @@ BLIND_SWAP_CARDS = [CARD_NUMBERS[_] for _ in ['Jack', 'Queen']]
 
 
 class Card(object):
-    _suite = None
+    _suit = None
     _value = None
+    _id = None
 
     @property
-    def suite(self):
-        return self._suite
+    def suit(self):
+        return self._suit
 
     @property
     def value(self):
         return self._value
 
-    def __init__(self, card_suite, card_number):
-        self._suite = CARD_SUITES(card_suite)
+    @property
+    def id(self):
+        return self._id
+
+    def __init__(self, card_suite, card_number, card_id):
+        self._suit = CARD_SUITES(card_suite)
         self._value = CARD_NUMBERS(card_number)
+        self._id = card_id
 
 
 def is_black_king(card):
     if card.value != CARD_NUMBERS['King']:
         return False
-    if card.suite not in [CARD_SUITES['Club'], CARD_SUITES['Spade']]:
+    if card.suit not in [CARD_SUITES['Club'], CARD_SUITES['Spade']]:
         return False
     return True
 
 
 def generate_deck():
     random_cards = np.random.permutation(np.arange(52))
-    random_suite = [card // 13 + 1 for card in random_cards]
+    random_suit = [card // 13 + 1 for card in random_cards]
     random_number = [card - 13 * (card // 13) + 1 for card in random_cards]
-    return [Card(x, y) for x, y in zip(random_suite, random_number)]
+    return [Card(x, y, i) for x, y, i in zip(random_suit, random_number, range(len(random_suit)))]
 
 
 class CambioGame(object):
@@ -50,6 +56,10 @@ class CambioGame(object):
     _discard = None
     _gameover = False
     _status = None
+
+    @property
+    def active_player(self):
+        return self._active_player
 
     @property
     def player_cards(self):
@@ -100,6 +110,12 @@ class CambioGame(object):
 
     def discard(self):
         self._discard.append(self._active_player_card)
+
+    def get_last_discarded(self):
+        if self._discard is None or len(self._discard) == 0:
+            return None
+        else:
+            return self._discard[-1]
 
     def peak_self(self, card_index):
         assert self._active_player_card.value in SELF_PEAK_CARDS

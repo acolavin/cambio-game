@@ -18,15 +18,34 @@ def start_game(data):
     try:
         room.start_game()
         broadcast_new_state(data['roomid'])
+
     except gamemanager.GameError:
         emit('game_log', "Cannot start game. Game already started!")
+
+
+@socketio.on('ready')
+def user_is_ready(data):
+    app.logger.info(data)
+    room = rooms[data['roomid']]
+    room.mark_player_as_ready(data['token'])
+    if room.all_players_ready():
+        payload = {'target': 'start_game',
+                   'text': 'Start the game!',
+                   'disabled': False}
+        emit('update_button', payload, room=data['roomid'])
+    else:
+        payload = {'target': '',
+                   'text': 'Waiting for others...',
+                   'disabled': True}
+        emit('update_button', payload)
 
 
 def broadcast_new_state(roomid):
     room = rooms[roomid]
     for token, sid in room._secret2sid.items():
         emit('game_state',
-             room.get_game_state(requesting_user_token=token), room=sid)
+             dict(room.get_game_state(requesting_user_token=token),
+             **{'room_and_token': {'roomid': roomid, 'token': token}}), room=sid)
 
 
 @socketio.on('propose_to_join')
@@ -34,7 +53,7 @@ def attempt_to_join_game(json):
     global rooms
     proposed_username = json['username']
     roomid = json['roomid']
-
+    # TODO: validate username
     if roomid in rooms:
         if rooms[roomid].username_taken(proposed_username):
             emit('game_log', "Username %s taken in room %s!" % (proposed_username, roomid))

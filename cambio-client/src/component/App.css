@@ -1,0 +1,117 @@
+/* Clear floats after the columns */
+.row {
+  display: flex;
+}
+
+.column_left {
+  width: 70%;
+  border: 1px black solid;
+}
+
+@media screen and (max-width: 400px) {
+
+  .column_left {
+    width: 50%;
+    border: 1px black solid;
+  }
+
+}
+
+.column_right {
+  flex-grow: 1;
+  border: 1px black solid;
+}
+
+.game {
+  width: 100%;
+  margin: 30px auto;
+}
+
+.App {
+  width: 90%;
+  margin: 30px auto;
+}
+
+.Napkin {
+  background-color: lightblue;
+  text-align: center;
+}
+
+.self_view {
+  display: flex
+}
+
+.UserBoxes {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 5px;
+}
+
+.UserBox {
+  flex-grow: 1;
+  margin: 2px;
+  border: 1px black solid;
+  min-width: 160px;
+}
+
+.ActiveUser {
+  background-color: lightcyan;
+}
+.UserBox h2{
+  padding:0;
+  margin:0;
+}
+
+.UserBoxLabel {
+  width: 100%;
+  clear: right;
+}
+.CardBox {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.Card {
+  height: 90px;
+  width: 60px;
+  #flex-grow: 1;
+  border: 1px black solid;
+  position: relative;
+  margin: 3px;
+}
+
+.card-red {
+  color: red;
+}
+.card-black {
+  color: black;
+}
+
+.CardLabel {
+  font-size: 15px;
+  margin: 0;
+  padding: 0;
+
+}
+
+.CardLabel-topLeft {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+}
+
+.CardLabel-bottomRight {
+  position: absolute;
+  transform: rotate(180deg);
+  rotation-point: center;
+  bottom: 2px;
+  right: 2px;
+}
+
+.GameLog {
+  border: 1px black;
+  min-height: 30px;
+}
+
