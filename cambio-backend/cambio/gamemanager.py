@@ -36,6 +36,7 @@ class GameManager(object):
         self._secret2player[secret] = username
         self._secret2sid[secret] = sid
         self._ready[username] = False
+        return secret
 
     def get_game_state(self, requesting_user_token=None):
 
@@ -90,7 +91,6 @@ class GameManager(object):
         self._secret2player = dict()
         self._secret2sid = dict()
         self._ready = dict()
-
 
 
 class GameError(RuntimeError):
