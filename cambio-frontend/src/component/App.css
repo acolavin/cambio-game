@@ -41,14 +41,14 @@
   display: flex
 }
 
-.UserBoxes {
+.OtherPlayers {
   display: flex;
   flex-wrap: wrap;
   width: 100%;
   margin: 5px;
 }
 
-.UserBox {
+.SelfPlayer {
   flex-grow: 1;
   margin: 2px;
   border: 1px black solid;
@@ -58,7 +58,7 @@
 .ActiveUser {
   background-color: lightcyan;
 }
-.UserBox h2{
+.PlayerBox h2{
   padding:0;
   margin:0;
 }

@@ -2,6 +2,9 @@ import React from "react";
 import {SocketContext} from './common';
 import './App.css';
 import rules from './rules.jpeg'
+import {OtherPlayers} from './OtherPlayers';
+import {SelfPlayer} from './SelfPlayer';
+
 
 import {
   PopupboxManager,
@@ -50,43 +53,17 @@ class GameRoom extends React.Component {
                 non_self_users.push(user)
             }
         }
+
         return <div className="game">
             <Header roomid={this.props.roomid}/>
             <div className="row">
                 <div className="column_left">
-                    <div className="UserBoxes">
-                        <UserBoxes users={non_self_users} token={this.state.room_and_token}/>
+                    <div className="OtherPlayers">
+                        <OtherPlayers users={non_self_users} token={this.state.room_and_token}/>
                     </div>
-                    {
-                        self_user ?
-                            <div className="self_view">
-                            <div>
-                                <UserBox name={self_user.name}
-                                         cards={self_user.cards}
-                                         active={self_user.active_user}
-                                         token={this.state.room_and_token}/>
-                            </div>
-                                <ActiveCard card={self_user.active_card}
-                                            token={this.state.room_and_token}/>
-                                <Deck token={this.state.room_and_token} />
-                                <Discard card={this.state.last_discarded_card}/>
-
-                            </div>
-                            :
-                            <div>
-                            <div className="self_view">
-                                <UserBox name={this.state.username}
-                                         cards={[]}
-                                         token={this.state.room_and_token}
-                                         active={false}/>
-                            </div>
-                                <ActiveCard card={[]} token={this.state.room_and_token}/>
-                                <Deck token={this.state.room_and_token} />
-                                <Discard card={this.state.last_discarded_card}/>
-
-                            </div>
-                    }
-
+                    <div className="SelfPlayer">
+                        <SelfPlayer user={self_user}/>
+                    </div>
 
                 </div>
                 <div className="column_right">
@@ -130,7 +107,7 @@ class Napkin extends React.Component {
 class ActionButton extends React.Component {
     constructor(props) {
         super(props);
-        this.state = props
+        this.state = {'action': props.action}   
     }
     static contextType = SocketContext;
     componentDidMount() {
@@ -150,179 +127,5 @@ function Header(props) {
 }
 
 
-class UserBoxes extends React.Component {
-    render() {
-        return this.props.users.map((user) =>
-            <div key={user.name}>
-                <UserBox name={user.name}
-                         cards={user.cards}
-                         active={user.active_user}
-                         token={this.props.token}
-                />
-            </div>)
-    }
-}
-
-class UserBox extends React.Component {
-    render() {
-        let userbox_style = "UserBox"
-        if(this.props.active) {
-            userbox_style += " ActiveUser"
-        }
-        return (
-            <div className={userbox_style}>
-                <div className="UserBoxLabel"><h3><b> {this.props.name} .</b></h3></div>
-                <div className="CardBox">
-                    <Cards cards={this.props.cards}/>
-                </div>
-            </div>
-        );
-    }
-}
-
-class Cards extends React.Component {
-    render() {
-        return this.props.cards.map((card) =>
-            <div key={card.id}>
-                <Card suit={card.suit} value={card.value} id={card.id}/>
-            </div>
-        )
-    }
-
-}
-
-
-class Card extends React.Component {
-    static contextType = SocketContext;
-    getClass(suit) {
-        switch (suit) {
-            case "Spade":
-                return "card-black"
-            case "Club":
-                return "card-black"
-            case "Heart":
-                return "card-red"
-            case "Diamond":
-                return "card-red"
-            default:
-                return "card-black"
-        }
-    }
-
-    getValue(value) {
-        switch (value) {
-            case "King":
-                return "K"
-            case "Queen":
-                return "Q"
-            case "Jack":
-                return "J"
-            case "Ace":
-                return "A"
-            case "HIDDEN":
-                return "?";
-            case "DISCARD":
-                return "Discard"
-            default:
-                return value
-        }
-    }
-
-    getSuit(value) {
-        switch (value) {
-            case "Club":
-                return "♣"
-            case "Spade":
-                return "♠"
-            case "Diamond":
-                return "♦"
-            case "Heart":
-                return "♥"
-            case "DISCARD":
-                return ""
-            case "HIDDEN":
-                return "?";
-            default:
-                return value
-        }
-    }
-
-
-    handleClick(e) {
-        e.preventDefault();
-        console.log('The card ' + this.props.id  + ' was clicked.');
-    }
-
-
-    render() {
-        return <div className={"Card " + this.getClass(this.props.suit)} onClick={this.handleClick}>
-            <div className="CardLabel CardLabel-topLeft">
-                {this.getValue(this.props.value)}{this.getSuit(this.props.suit)}
-            </div>
-            <div className="CardLabel CardLabel-bottomRight">
-                {this.getValue(this.props.value)}{this.getSuit(this.props.suit)}
-            </div>
-        </div>
-    }
-}
-
-
-class ActiveCard extends React.Component {
-    static contextType = SocketContext;
-    render() {
-        let card = this.props.card
-        let socket = this.context
-        return <div>
-            {
-            this.props.card
-                ?
-                <div>
-                    <Card suit={card.suit} value={card.value}/>
-                    <button onClick={() => {
-                        socket.emit(card.action, card.token)
-                    }}>{ card.action_string }</button>
-                </div>
-                :
-                <div>
-                    <Card suit='' value=''/>
-                    <button disabled={true}>[Disabled]</button>
-                </div>
-            }
-        </div>
-    }
-
-}
-
-class Deck extends React.Component {
-    static contextType = SocketContext;
-    render() {
-        let socket = this.context
-        return <div onClick={() => {
-                    socket.emit('draw_card', this.props.token)
-
-        }}><Card suit='Deck' value='' id="deck"/></div>
-
-
-    }
-
-}
-
-function Discard(props) {
-    return <div>
-            {
-            props.card
-                ?
-                <div>
-                    <Card suit={props.card.suit} value={props.card.value}/>
-                </div>
-                :
-                <div>
-                    <Card suit='DISCARD' value='DISCARD'/>
-                </div>
-            }
-        </div>
-
-
-}
 
 export default GameRoom;
