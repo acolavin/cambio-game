@@ -35,6 +35,8 @@
 .Napkin {
   background-color: lightblue;
   text-align: center;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .self_view {

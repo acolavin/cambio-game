@@ -36,6 +36,7 @@ class GameRoom extends React.Component {
     componentDidMount() {
         this.context.emit('joined_room', {'user_token': this.props.token, 'roomid': this.props.roomid})
         this.context.on("token2username", (data) => this.setState({username: data}))
+        this.context.on("update_button", (data) => this.setState({action: data}))
         this.context.on("game_state", (json) => {
             console.log(json);
             this.setState(json)});
@@ -105,19 +106,12 @@ class Napkin extends React.Component {
 
 
 class ActionButton extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {'action': props.action}   
-    }
     static contextType = SocketContext;
-    componentDidMount() {
-        this.context.on("update_button", (data) => this.setState({action: data}));
-    }
     render() {
         return <div className="ActionButton"><button onClick={() => {
-            this.context.emit(this.state.action.target, this.props.token)
-        }} disabled={this.state.action.disabled}>
-            {this.state.action.text} </button></div>
+            this.context.emit(this.props.action.target, this.props.token)
+        }} disabled={this.props.action.disabled}>
+            {this.props.action.text} </button></div>
     }
 }
 
@@ -125,7 +119,6 @@ class ActionButton extends React.Component {
 function Header(props) {
     return <div>Welcome to room {props.roomid}.</div>
 }
-
 
 
 export default GameRoom;

@@ -55,7 +55,7 @@ class CambioGame(object):
     _cambio = None
     _discard = None
     _gameover = False
-    _status = None
+    _stage = None
 
     @property
     def active_player(self):
@@ -66,8 +66,12 @@ class CambioGame(object):
         return self._player_cards
 
     @property
-    def status(self):
-        return self._status
+    def stage(self):
+        return self._stage
+
+    @stage.setter
+    def stage(self, stage):
+        self._stage = stage
 
     def __init__(self, player_ids):
         self._player_cards = {k: list() for k in player_ids}
@@ -75,7 +79,7 @@ class CambioGame(object):
         self._discard = list()
         self._player_order = player_ids
         self._active_player = self._player_order[0]
-        self._status = "initiated"
+        self._stage = "pre_game"
 
     def get_card_from_deck(self):
         if not len(self._deck):
@@ -86,7 +90,7 @@ class CambioGame(object):
         for _ in range(4):
             for player in self._player_cards:
                 self._player_cards[player].append(self.get_card_from_deck())
-        self._status = "started"
+        self._stage = "initial_card_preview"
 
     def pregame_show(self):
         for player, cards in self._player_cards.items():

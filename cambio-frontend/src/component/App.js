@@ -14,7 +14,7 @@ class App extends React.Component {
     }
 
     componentDidMount() {
-        this.context.on("valid_username", (json) => this.setState({page: 'game', ...json}));
+        this.context.on("enter_room", (json) => this.setState({page: 'game', ...json}));
         this.context.on("connect", () => this.setState({connected: true}));
     }
 

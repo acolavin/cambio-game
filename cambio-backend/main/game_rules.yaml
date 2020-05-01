@@ -1,57 +1,74 @@
-valid_states:
-  pre_game:
-    type: global
-    allowed_actions:
-      - indicate_ready_to_continue
-      - start_game
-  initial_card_preview:
-    type: global
-    allowed_actions:
-      - indicate_ready_to_continue
-  midgame_inactive_player:
-    type: player
-    allowed_actions:
-      - attempt_discard_match
-  midgame_active_player_predraw:
-    type: player
-    allowed_actions:
-      - call_cambio
-      - attempt_discard_match
-      - draw_card
-  midgame_active_player_postdraw_nopower:
-    type: player
-    allowed_actions:
-      - discard_active_card
-      - keep_active_card
-  midgame_active_player_postdraw_78:
-    type: player
-    allowed_actions:
-      - discard_active_card
-      - attempt_discard_match
-      - peek_self_card
-      - keep_active_card
-      - indicate_ready_to_continue
-  midgame_active_player_postdraw_910:
-    type: player
-    allowed_actions:
-      - discard_active_card
-      - attempt_discard_match
-      - peek_self_card
-      - keep_active_card
-      - indicate_ready_to_continue
-  midgame_active_player_postdraw_jq:
-    type: player
-    allowed_actions:
-      - discard_active_card
-      - attempt_discard_match
-      - switch_self_other_card
-      - keep_active_card
-  midgame_active_player_postdraw_blackking:
-    type: player
-    allowed_actions:
-      - discard_active_card
-      - attempt_discard_match
-      - peak_other_card
-      - indicate_ready_to_continue
-      - switch_self_other_card
-      - keep_active_card
+pre_game:
+  type: global
+  allowed_actions:
+    - indicate_ready_to_continue
+    - start_game
+  state_init:
+    - wait_for_ready
+initial_card_preview:
+  type: global
+  allowed_actions:
+    - indicate_ready_to_continue
+  state_init:
+    - reveal_two_cards
+    - wait_for_ready
+final_card_showcase:
+  type: global
+  allows_actions:
+    - indicate_ready_to_continue
+  state_init:
+    - show_cards_and_add_points
+    - wait_for_ready
+midgame_predraw:
+  type: player
+  inactive_allowed_actions:
+    - attempt_discard_match
+  active_allowed_actions:
+    - call_cambio
+    - attempt_discard_match
+    - draw_card
+midgame_postdraw_nopower:
+  type: player
+  inactive_allowed_actions:
+    - attempt_discard_match
+  active_allowed_actions:
+    - discard_active_card
+    - keep_active_card
+midgame_player_postdraw_78:
+  type: player
+  inactive_allowed_actions:
+    - attempt_discard_match
+  active_allowed_actions:
+    - discard_active_card
+    - attempt_discard_match
+    - peek_self_card
+    - keep_active_card
+    - indicate_ready_to_continue
+midgame_player_postdraw_910:
+  type: player
+  inactive_allowed_actions:
+    - attempt_discard_match
+  active_allowed_actions:
+    - discard_active_card
+    - attempt_discard_match
+    - peek_self_card
+    - keep_active_card
+    - indicate_ready_to_continue
+midgame_player_postdraw_jq:
+  type: player
+  inactive_allowed_actions:
+    - attempt_discard_match
+  active_allowed_actions:
+    - discard_active_card
+    - attempt_discard_match
+    - switch_self_other_card
+    - keep_active_card
+midgame_active_player_postdraw_blackking:
+  type: player
+  active_allowed_actions:
+    - discard_active_card
+    - attempt_discard_match
+    - peak_other_card
+    - indicate_ready_to_continue
+    - switch_self_other_card
+    - keep_active_card
