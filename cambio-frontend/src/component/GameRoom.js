@@ -63,7 +63,7 @@ class GameRoom extends React.Component {
                         <OtherPlayers users={non_self_users} token={this.state.room_and_token}/>
                     </div>
                     <div className="SelfPlayer">
-                        <SelfPlayer user={self_user}/>
+                        <SelfPlayer user={self_user} token={this.state.room_and_token} discard={this.state.last_discarded_card}/>
                     </div>
 
                 </div>

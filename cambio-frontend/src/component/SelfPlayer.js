@@ -5,6 +5,8 @@ import {Card} from './Cards';
 
 
 class SelfPlayer extends React.Component {
+    static contextType = SocketContext;
+
     constructor(props) {
         super(props)
         let self_user = props.user
@@ -14,12 +16,15 @@ class SelfPlayer extends React.Component {
                 cards: [],
                 active: false,
                 active_card: [],
-                room_and_token: '',
                 last_discarded_card: {'suit': 'DISCARD', 'value': 'DISCARD'}
             }
         }
 
         this.state = self_user
+    }
+
+    componentDidMount() {
+        this.context.on("update_active_card", (data) => this.setState({...this.state, active_card: data}))
     }
 
 
@@ -29,12 +34,16 @@ class SelfPlayer extends React.Component {
                 <PlayerBox name={this.props.user.name}
                            cards={this.props.user.cards}
                            active={this.props.user.active_user}
-                           token={this.props.user.room_and_token}/>
+                           token={this.props.token}/>
             </div>
-            <ActiveCard card={this.props.user.active_card}
-                        token={this.props.user.room_and_token}/>
-            <Deck token={this.state.room_and_token}/>
-            <Discard card={this.state.last_discarded_card}/>
+            <ActiveCard card={this.state.active_card}
+                        token={this.props.token}/>
+                        <div>
+                            <Deck token={this.props.token}/>
+                        </div>
+                        <div>
+                            <Discard card={this.props.last_discarded_card} token={this.props.token}/>
+                        </div>
 
         </div>
     }
@@ -44,7 +53,6 @@ class SelfPlayer extends React.Component {
 
 class ActiveCard extends React.Component {
     static contextType = SocketContext;
-
     render() {
         let card = this.props.card
         let socket = this.context
@@ -53,14 +61,14 @@ class ActiveCard extends React.Component {
                 this.props.card
                     ?
                     <div>
-                        <Card suit={card.suit} value={card.value}/>
+                        <Card suit={card.suit} value={card.value} id={card.id}/>
                         <button onClick={() => {
                             socket.emit(card.action, card.token)
-                        }}>{card.action_string}</button>
+                        }} disabled={card.action_string === ""}>{card.action_string}</button>
                     </div>
                     :
                     <div>
-                        <Card suit='' value=''/>
+                        <Card suit='' value='' id=''/>
                         <button disabled={true}>[Disabled]</button>
                     </div>
             }
@@ -73,31 +81,27 @@ class Deck extends React.Component {
     static contextType = SocketContext;
 
     render() {
-        let socket = this.context
-        return <div onClick={() => {
-            socket.emit('draw_card', this.props.token)
-
-        }}><Card suit='Deck' value='' id="deck"/></div>
-
+        return <Card suit='Deck' value='' id="deck"
+        func={() => {this.context.emit('draw', this.props.token)}}/>
 
     }
 
 }
 
-function Discard(props) {
-    return <div>
+class Discard extends React.Component {
+    static contextType = SocketContext;
+
+    render() { return <div>
         {
-            props.card
+            this.props.card
                 ?
-                <div>
-                    <Card suit={props.card.suit} value={props.card.value}/>
-                </div>
+                    <Card suit={this.props.card.suit} value={this.props.card.value}
+                    func={() => {this.context.emit('discard_card', this.props.token)}}/>
                 :
-                <div>
-                    <Card suit='DISCARD' value='DISCARD'/>
-                </div>
+                    <Card suit='DISCARD' value='DISCARD'
+                          func={() => { this.context.emit('discard_card', this.props.token)}}/>
         }
-    </div>
+    </div> }
 
 
 }

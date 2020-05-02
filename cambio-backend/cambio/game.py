@@ -2,10 +2,10 @@ from enum import Enum
 import numpy as np
 
 CARD_SUITES = Enum('Suites', 'Club Spade Heart Diamond')
-CARD_NUMBERS = Enum('Numbers', 'Ace 2 3 4 5 6 7 8 9 10 Jack Queen King')
-SELF_PEAK_CARDS = [CARD_NUMBERS[_] for _ in ['7', '8']]
-OTHER_PEAK_CARDS = [CARD_NUMBERS[_] for _ in ['9', '10']]
-BLIND_SWAP_CARDS = [CARD_NUMBERS[_] for _ in ['Jack', 'Queen']]
+CARD_VALUES = Enum('Numbers', 'Ace 2 3 4 5 6 7 8 9 10 Jack Queen King')
+SELF_PEAK_CARDS = [CARD_VALUES[_] for _ in ['7', '8']]
+OTHER_PEAK_CARDS = [CARD_VALUES[_] for _ in ['9', '10']]
+BLIND_SWAP_CARDS = [CARD_VALUES[_] for _ in ['Jack', 'Queen']]
 
 
 class Card(object):
@@ -27,12 +27,13 @@ class Card(object):
 
     def __init__(self, card_suite, card_number, card_id):
         self._suit = CARD_SUITES(card_suite)
-        self._value = CARD_NUMBERS(card_number)
+        self._value = CARD_VALUES(card_number)
         self._id = card_id
 
 
+
 def is_black_king(card):
-    if card.value != CARD_NUMBERS['King']:
+    if card.value != CARD_VALUES['King']:
         return False
     if card.suit not in [CARD_SUITES['Club'], CARD_SUITES['Spade']]:
         return False
@@ -60,6 +61,16 @@ class CambioGame(object):
     @property
     def active_player(self):
         return self._active_player
+
+    @property
+    def active_player_card(self):
+        """
+
+        Returns
+        -------
+        Card
+        """
+        return self._active_player_card
 
     @property
     def player_cards(self):
@@ -105,7 +116,6 @@ class CambioGame(object):
     def draw(self):
         assert self._active_player_card is None
         self._active_player_card = self.get_card_from_deck()
-        self._active_player_card.show()
 
     def switch_self(self, card_index):
         existing_card = self._player_cards[self._active_player][card_index]
@@ -114,6 +124,7 @@ class CambioGame(object):
 
     def discard(self):
         self._discard.append(self._active_player_card)
+        self._active_player_card = None
 
     def get_last_discarded(self):
         if self._discard is None or len(self._discard) == 0:
@@ -145,11 +156,6 @@ class CambioGame(object):
         self._cambio = self._active_player
 
     def end_turn(self):
-        # hide the cards
-        for player, cards in self._player_cards.items():
-            for card in cards:
-                card.hide()
-
         # revolve the next player:
         new_player_index = self._player_order.index(self._active_player) + 1
         if new_player_index == len(self._player_order):
@@ -157,8 +163,7 @@ class CambioGame(object):
         self._active_player = self._player_order[new_player_index]
         if self._active_player == self._cambio:
             self._active_player = None
-
-        self._gameover = True
+            self._gameover = True
 
 
 

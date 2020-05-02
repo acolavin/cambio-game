@@ -68,10 +68,20 @@ class Card extends React.Component {
         }
     }
 
+    constructor(props) {
+        super(props);
+
+        // This binding is necessary to make `this` work in the callback
+        this.handleClick = this.handleClick.bind(this);
+  }
+
 
     handleClick(e) {
         e.preventDefault();
         console.log('The card ' + this.props.id  + ' was clicked.');
+        if(this.props.func) {
+            this.props.func(this.props)
+        }
     }
 
 

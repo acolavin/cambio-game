@@ -1,6 +1,6 @@
 import hashlib
 import random
-from ..cambio.game import CambioGame
+from ..cambio.game import CambioGame, SELF_PEAK_CARDS, OTHER_PEAK_CARDS, BLIND_SWAP_CARDS, is_black_king
 from ..app import app
 
 HIDDEN_CARD = "HIDDEN"
@@ -14,6 +14,7 @@ class GameManager(object):
     _game = None
     _ready = None
     _state = None
+
 
     @property
     def players(self):
@@ -81,9 +82,7 @@ class GameManager(object):
                              'active_user': name == active_user}
                 if name != requesting_user:
                     player_cards.append(dict(base_dict,
-                                           **{'cards': [{'suit': HIDDEN_CARD,
-                                                         'value': HIDDEN_CARD,
-                                                         'id': c.id} for c in cards]}))
+                                           **{'cards': [serialize_card(c, hide=True) for c in cards]}))
 
                 else:
                     if game_stage == 'initial_card_preview':
@@ -94,11 +93,10 @@ class GameManager(object):
                         hide_index = 0
 
                     player_cards.append(dict(base_dict,
-                                             **{'cards': [{'suit': c.suit.name if i < hide_index else HIDDEN_CARD,
-                                                           'value': c.value.name if i < hide_index else HIDDEN_CARD,
-                                                           'id': c.id} for i, c in enumerate(cards)]}))
+                                             **{'cards': [serialize_card(c, hide=i >= hide_index) for i, c in enumerate(cards)]}))
         return {'game_state': player_cards,
-                'last_discarded_card': self._game.get_last_discarded() if self._game is not None else None}
+                'last_discarded_card': serialize_card(self._game.get_last_discarded(),
+                                                      hide=False) if self._game is not None else None}
 
     def start_game(self):
         if self._game is None:
@@ -117,6 +115,44 @@ class GameManager(object):
         app.logger.info(self._ready)
         return all(self._ready.values())
 
+    def active_player_draw(self, token):
+        if self.is_active_token(token):
+            self._game.draw()
+
+        active_card = self._game.active_player_card
+        action, action_string = '', '(this card has no power)'
+
+        if active_card.value in SELF_PEAK_CARDS:
+            action = 'self_peak'
+            action_string = 'Click to activate power.'
+            self.set_game_stage('midgame_player_postdraw_78')
+            self.set_game_stage('')
+        elif active_card.value in OTHER_PEAK_CARDS:
+            action = 'other_peak'
+            action_string = 'Click to activate power.'
+            self.set_game_stage('midgame_player_postdraw_910')
+        elif active_card.value in BLIND_SWAP_CARDS:
+            action = 'blind_swap'
+            action_string = 'Click to activate power.'
+            self.set_game_stage('midgame_player_postdraw_jq')
+        elif is_black_king(active_card):
+            action = 'nonblind_swap'
+            action_string = 'Click to activate power.'
+            self.set_game_stage('midgame_active_player_postdraw_blackking')
+        else:
+            self.set_game_stage('midgame_postdraw_nopower')
+            pass
+        return dict(serialize_card(active_card, hide=False),
+                    **{'action': action, 'action_string': action_string})
+
+    def active_player_discard(self, token):
+        if self.is_active_token(token):
+            self._game.discard()
+            self._game.end_turn()
+            self.set_game_stage('midgame_predraw')
+
+        return
+
     def __init__(self):
         self._players = list()
         self._player2secret = dict()
@@ -129,3 +165,16 @@ class GameError(RuntimeError):
     """Runtime error in context of game.
     """
     pass
+
+
+def serialize_card(card, hide):
+    if card is None:
+        return {'suit': '', 'value': '', 'id': ''}
+    if hide:
+        return {'suit': HIDDEN_CARD,
+                'value': HIDDEN_CARD,
+                'id': card.id}
+    else:
+        return {'suit': card.suit.name,
+                'value': card.value.name,
+                'id': card.id}

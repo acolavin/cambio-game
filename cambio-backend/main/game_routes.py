@@ -19,7 +19,7 @@ def valid_move(gm, move, active):
     """
     stage = gm.get_game_stage()
     if stage not in GAME_RULES:
-        app.logger.critical('Game is in an unrecognized state!')
+        app.logger.critical('Game is in an unrecognized stage! ({stage})'.format(stage=stage))
         return False
     if GAME_RULES[stage]['type'] == 'global':
         if move in GAME_RULES[stage]['allowed_actions']:
@@ -33,15 +33,14 @@ def valid_move(gm, move, active):
     return False
 
 
-def broadcast_game_state(roomid, action=None):
+def broadcast_game_state(roomid):
     room = room_game_managers[roomid]
-    game_stage = room.get_game_stage()
-
     for token, sid in room.secret2sid.items():
-
+        payload = dict(room.get_game_state(requesting_user_token=token),
+                  **{'room_and_token': {'roomid': roomid, 'user_token': token}})
+        # app.logger.info(payload)
         emit('game_state',
-             dict(room.get_game_state(requesting_user_token=token),
-                  **{'room_and_token': {'roomid': roomid, 'user_token': token}}),
+             payload,
              room=sid)
 
 
@@ -66,9 +65,9 @@ def user_is_ready(data):
     if room.all_players_ready():
         if room.get_game_stage() == 'initial_card_preview':
             update_button(data['roomid'],
-                          active_player={'target': 'draw',
-                                         'text': 'Draw.',
-                                         'disabled': False},
+                          active_player={'target': '',
+                                         'text': '(draw a card!).',
+                                         'disabled': True},
                           inactive_player={'target': '',
                                          'text': '(no action available).',
                                          'disabled': True})
@@ -86,7 +85,7 @@ def user_is_ready(data):
 
 
     else:
-        emit('update_button', {'target':'', 'text':'Waiting for others...', 'disabled':'True'})
+        emit('update_button', {'target': '', 'text': 'Waiting for others...', 'disabled': 'True'})
         return
 
 
@@ -149,3 +148,26 @@ def start_game(data):
     except gamemanager.GameError:
         emit('game_log', "Cannot start game. Game already started!")
 
+
+@socketio.on('draw')
+def draw_card(data):
+    if not valid_data(data):
+        return False
+
+    room = room_game_managers[data['roomid']]
+    if valid_move(room, 'draw_card', room.is_active_token(data['user_token'])):
+        card = room.active_player_draw(data['user_token'])
+        emit('update_active_card', card)
+
+
+
+@socketio.on('discard_card')
+def discard_card(data):
+    if not valid_data(data):
+        return False
+    room = room_game_managers[data['roomid']]
+    if valid_move(room, 'discard_active_card', room.is_active_token(data['user_token'])):
+        app.logger.info('Hello!')
+        room.active_player_discard(data['user_token'])
+        emit('update_active_card', None)
+        broadcast_game_state(data['roomid'])
