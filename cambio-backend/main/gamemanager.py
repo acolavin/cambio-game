@@ -126,7 +126,6 @@ class GameManager(object):
             action = 'self_peak'
             action_string = 'Click to activate power.'
             self.set_game_stage('midgame_player_postdraw_78')
-            self.set_game_stage('')
         elif active_card.value in OTHER_PEAK_CARDS:
             action = 'other_peak'
             action_string = 'Click to activate power.'
