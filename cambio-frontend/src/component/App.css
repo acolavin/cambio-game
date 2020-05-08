@@ -117,3 +117,12 @@
   min-height: 30px;
 }
 
+.logs {
+  width: 50%;
+  height: 100px;
+  overflow: scroll;
+}
+
+.cardButton {
+  width: 60px
+}

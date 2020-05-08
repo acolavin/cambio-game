@@ -37,7 +37,7 @@ def broadcast_game_state(roomid):
     room = room_game_managers[roomid]
     for token, sid in room.secret2sid.items():
         payload = dict(room.get_game_state(requesting_user_token=token),
-                  **{'room_and_token': {'roomid': roomid, 'user_token': token}})
+                       **{'room_and_token': {'roomid': roomid, 'user_token': token}})
         # app.logger.info(payload)
         emit('game_state',
              payload,
@@ -61,6 +61,8 @@ def user_is_ready(data):
     app.logger.info(data)
     room = room_game_managers[data['roomid']]
     room.mark_player_as_ready(data['user_token'])
+    emit('game_log', "{name} is ready.".format(name=room.get_player_username(data['user_token'])),
+         room=data['roomid'])
 
     if room.all_players_ready():
         if room.get_game_stage() == 'initial_card_preview':
@@ -82,10 +84,8 @@ def user_is_ready(data):
             update_button(data['roomid'], active_player=payload, inactive_player=payload)
         else:
             raise NotImplementedError()
-
-
     else:
-        emit('update_button', {'target': '', 'text': 'Waiting for others...', 'disabled': 'True'})
+        emit('update_button', {'target': '', 'text': 'Ready.', 'disabled': 'True'})
         return
 
 
@@ -143,7 +143,7 @@ def start_game(data):
         update_button(data['roomid'],
                       active_player=ready_button,
                       inactive_player=ready_button)
-        emit('game_log', "Click ""Continue Game"" when you're done looking at your cards!")
+        emit('game_log', "Click ""Continue Game"" when you're done looking at your cards!", room=data['roomid'])
 
     except gamemanager.GameError:
         emit('game_log', "Cannot start game. Game already started!")
@@ -152,22 +152,44 @@ def start_game(data):
 @socketio.on('draw')
 def draw_card(data):
     if not valid_data(data):
-        return False
+        return None
 
     room = room_game_managers[data['roomid']]
     if valid_move(room, 'draw_card', room.is_active_token(data['user_token'])):
         card = room.active_player_draw(data['user_token'])
         emit('update_active_card', card)
-
+    emit('game_log', "{name} drew a card!".format(name=room.get_player_username(data['user_token'])),
+         room=data['roomid'])
 
 
 @socketio.on('discard_card')
 def discard_card(data):
     if not valid_data(data):
-        return False
+        return None
     room = room_game_managers[data['roomid']]
     if valid_move(room, 'discard_active_card', room.is_active_token(data['user_token'])):
         app.logger.info('Hello!')
         room.active_player_discard(data['user_token'])
         emit('update_active_card', None)
+        emit('game_log', "{name} discarded a card!".format(name=room.get_player_username(data['user_token'])),
+             room=data['roomid'])
         broadcast_game_state(data['roomid'])
+
+
+@socketio.on("default_card_action")
+def default_card_action(data):
+    if not valid_data(data) or 'card_id' not in data:
+        return None
+    room = room_game_managers[data['roomid']]
+    card_owner = room.get_card_ownership(data['card_id'])
+    if valid_move(room, 'attempt_discard_match', room.is_active_token(data['user_token'])) and card_owner is not None:
+        self_name = room.get_player_username(data['user_token'])
+        emit('game_log', "{name1} attempted to discard {name2}''s card!".format(name1=self_name,
+                                                                                name2=card_owner),
+             room=data['roomid'])
+
+        if card_owner is not None:
+            if room.attempt_discard_match(data['user_token'], data['card_id']):
+                emit('game_log', "...Success!", room=data['roomid'])
+            else:
+                emit('game_log', "...Failed!", room=data['roomid'])

@@ -20,7 +20,6 @@ class App extends React.Component {
 
     render() {
         return (
-
             <div className="App">
                 {
                     this.state.page === 'login' && <Login />
@@ -31,7 +30,6 @@ class App extends React.Component {
                 <div className="Status">Connected ? {this.state.connected.toString()}</div>
                 <div className="GameLog" ><GameLog logs={["This is the logs"]}/></div>
             </div>
-
         );
     }
 }
@@ -51,9 +49,10 @@ class GameLog extends React.Component {
     }
 
     render() {
-        return this.state.logs.map((log, index) =>
-            <div key={index}>Log: {log}<br/></div>
-        )
+        return <textarea className="logs" value={this.state.logs.reverse().join('\n')} readOnly={true}>
+
+            </textarea>
+
     }
 }
 export default App;
