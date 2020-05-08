@@ -5,11 +5,10 @@ class Cards extends React.Component {
     render() {
         return this.props.cards.map((card) =>
             <div key={card.id}>
-                <Card suit={card.suit} value={card.value} id={card.id}/>
+                <Card suit={card.suit} value={card.value} id={card.id} token={this.props.token}/>
             </div>
         )
     }
-
 }
 
 
@@ -81,7 +80,11 @@ class Card extends React.Component {
         console.log('The card ' + this.props.id  + ' was clicked.');
         if(this.props.func) {
             this.props.func(this.props)
+        } else {
+            console.log(this.props)
+            this.context.emit("default_card_action", {...this.props.token, card_id: this.props.id})
         }
+
     }
 
 

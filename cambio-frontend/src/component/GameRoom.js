@@ -28,7 +28,9 @@ class GameRoom extends React.Component {
             action: {target: 'ready',
                      text: 'Ready to Start',
                      disabled: false},
-            room_and_token: undefined
+            room_and_token: {room: undefined,
+                token: undefined
+            }
 
         };
     }

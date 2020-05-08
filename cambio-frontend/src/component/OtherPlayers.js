@@ -25,7 +25,7 @@ class PlayerBox extends React.Component {
             <div className={userbox_style}>
                 <div className="UserBoxLabel"><h3><b> {this.props.name} .</b></h3></div>
                 <div className="CardBox">
-                    <Cards cards={this.props.cards}/>
+                    <Cards cards={this.props.cards} token={this.props.token}/>
                 </div>
             </div>
         );

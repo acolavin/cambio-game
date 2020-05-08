@@ -31,7 +31,6 @@ class Card(object):
         self._id = card_id
 
 
-
 def is_black_king(card):
     if card.value != CARD_VALUES['King']:
         return False
@@ -91,6 +90,7 @@ class CambioGame(object):
         self._player_order = player_ids
         self._active_player = self._player_order[0]
         self._stage = "pre_game"
+        self._card_id_registry = {card.id: card for card in self._deck}
 
     def get_card_from_deck(self):
         if not len(self._deck):
@@ -122,7 +122,7 @@ class CambioGame(object):
         self._player_cards[self._active_player][card_index] = self._active_player_card
         self._discard.append(existing_card)
 
-    def discard(self):
+    def discard_active_card(self):
         self._discard.append(self._active_player_card)
         self._active_player_card = None
 
