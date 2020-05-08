@@ -27,6 +27,12 @@ midgame_predraw:
     - call_cambio
     - attempt_discard_match
     - draw_card
+midgame_match_pause:
+  type: player
+  inactive_allowed_actions:
+    - transfer_self_card
+  active_allowed_actions:
+    - transfer_self_card
 midgame_postdraw_nopower:
   type: player
   inactive_allowed_actions:
