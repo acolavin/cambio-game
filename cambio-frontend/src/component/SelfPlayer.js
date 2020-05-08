@@ -42,7 +42,7 @@ class SelfPlayer extends React.Component {
                             <Deck token={this.props.token}/>
                         </div>
                         <div>
-                            <Discard card={this.props.last_discarded_card} token={this.props.token}/>
+                            <Discard card={this.props.discard} token={this.props.token}/>
                         </div>
 
         </div>
@@ -61,15 +61,15 @@ class ActiveCard extends React.Component {
                 this.props.card
                     ?
                     <div>
-                        <Card suit={card.suit} value={card.value} id={card.id}/>
+                        <Card suit={card.suit} value={card.value} id={card.id} func={() => true}/>
                         <button onClick={() => {
                             socket.emit(card.action, card.token)
                         }} disabled={card.action_string === ""}>{card.action_string}</button>
                     </div>
                     :
                     <div>
-                        <Card suit='' value='' id=''/>
-                        <button disabled={true}>[Disabled]</button>
+                        <Card suit='' value='' id='' func={() => true}/>
+                        <button className="cardButton" disabled={true}>[Disabled]</button>
                     </div>
             }
         </div>
