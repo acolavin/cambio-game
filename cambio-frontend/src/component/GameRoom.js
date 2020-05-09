@@ -70,9 +70,9 @@ class GameRoom extends React.Component {
 
                 </div>
                 <div className="column_right">
-                    <Napkin />
-                    <ActionButton action={this.state.action} token={this.state.room_and_token}/>
 
+                    <ActionButton action={this.state.action} token={this.state.room_and_token}/>
+                    <Napkin />
                 </div>
             </div>
         </div>
@@ -119,7 +119,7 @@ class ActionButton extends React.Component {
 
 
 function Header(props) {
-    return <div>Welcome to room {props.roomid}.</div>
+    return <div className="PageTitle">Welcome to room {props.roomid}.</div>
 }
 
 

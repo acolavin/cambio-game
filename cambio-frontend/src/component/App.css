@@ -20,16 +20,18 @@
 .column_right {
   flex-grow: 1;
   border: 1px black solid;
+  position: relative
 }
 
 .game {
-  width: 100%;
+  width: 90%;
   margin: 30px auto;
 }
 
 .App {
-  width: 90%;
+  width: 800px;
   margin: 30px auto;
+
 }
 
 .Napkin {
@@ -37,6 +39,9 @@
   text-align: center;
   padding-top: 10px;
   padding-bottom: 10px;
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
 }
 
 .self_view {
@@ -62,7 +67,7 @@
 }
 .PlayerBox h2{
   padding:0;
-  margin:0;
+  margin:20px;
 }
 
 .UserBoxLabel {
@@ -115,14 +120,57 @@
 .GameLog {
   border: 1px black;
   min-height: 30px;
+  margin: 30px auto;
+  text-align: center
 }
 
 .logs {
-  width: 50%;
+  width: 90%;
   height: 100px;
   overflow: scroll;
+  display: block;
+  margin: 30px auto;
+
 }
 
 .cardButton {
   width: 60px
+}
+
+.Status {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+}
+
+.loginField {
+  margin: 4px;
+}
+
+.loginText {
+  margin: 4px;
+}
+
+.ActionButton {
+  text-align: center;
+  margin: auto;
+  margin-top: 5px;
+}
+
+.loginButton {
+  display:inline-block;
+  margin: auto;
+  flex: 1
+}
+.loginForm {
+  display: flex;
+  width: 50%;
+  margin: auto;
+  flex-direction: row;
+}
+
+.PageTitle {
+  text-align: center;
+  font-size: 30px;
+  font-family: fantasy
 }

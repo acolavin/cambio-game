@@ -38,17 +38,20 @@ class Login extends React.Component {
 
     render() {
         return (
-            <form onSubmit={this.handleSubmit}>
-                <label>
-                    Username:
+            <div><div className="PageTitle">Cambio</div>
+            <form onSubmit={this.handleSubmit} className="loginForm">
+
+                <label className="loginField">
+                    <div className="loginText">Username:</div>
                     <input type="text" name="username" value={this.state.username} onChange={this.handleChange}/>
                 </label>
-                <label>
-                    Room:
+                <label className="loginField">
+                    <div className="loginText">Room:</div>
                     <input type="text" name="roomid" value={this.state.roomid} onChange={this.handleChange}/>
                 </label>
-                <input type="submit" value="Submit"/>
-            </form>
+
+                <input type="submit" value="Submit" className="loginButton"/>
+            </form></div>
 
 
     );

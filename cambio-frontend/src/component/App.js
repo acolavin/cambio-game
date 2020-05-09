@@ -27,8 +27,9 @@ class App extends React.Component {
                 {
                     this.state.page === 'game' && <GameRoom token={this.state.token} roomid={this.state.roomid} />
                 }
-                <div className="Status">Connected ? {this.state.connected.toString()}</div>
+
                 <div className="GameLog" ><GameLog logs={["This is the logs"]}/></div>
+                <div className="Status">Connected ? {this.state.connected.toString()}</div>
             </div>
         );
     }
