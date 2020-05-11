@@ -44,10 +44,6 @@
   width: 100%;
 }
 
-.self_view {
-  display: flex
-}
-
 .OtherPlayers {
   display: flex;
   flex-wrap: wrap;
@@ -72,7 +68,7 @@
 
 .UserBoxLabel {
   width: 100%;
-  clear: right;
+  margin: 0px 5px;
 }
 .CardBox {
   width: 100%;
@@ -83,7 +79,6 @@
 .Card {
   height: 90px;
   width: 60px;
-  #flex-grow: 1;
   border: 1px black solid;
   position: relative;
   margin: 3px;
@@ -173,4 +168,21 @@
   text-align: center;
   font-size: 30px;
   font-family: fantasy
+}
+
+.decks {
+  display: flex;
+  flex-direction: row;
+  margin: 10px auto;
+  width: 150px;
+}
+.SelfPlayer {
+  position: relative;
+  display: flex;
+  height: 180px;
+}
+
+.actionCard {
+  margin: 0 auto;
+  width: 70px;
 }

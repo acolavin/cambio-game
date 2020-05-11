@@ -4,14 +4,16 @@ import {Cards} from './Cards';
 
 class OtherPlayers extends React.Component {
     render() {
-        return this.props.users.map((user) =>
+        return <div>
+            {this.props.users.map((user) =>
             <div key={user.name}>
                 <PlayerBox name={user.name}
                          cards={user.cards}
                          active={user.active_user}
                          token={this.props.token}
                 />
-            </div>)
+            </div>)}
+        </div>
     }
 }
 
@@ -23,7 +25,7 @@ class PlayerBox extends React.Component {
         }
         return (
             <div className={userbox_style}>
-                <div className="UserBoxLabel"><h3><b> {this.props.name}</b></h3></div>
+                <div className="UserBoxLabel"><h3><b>{this.props.name}</b></h3></div>
                 <div className="CardBox">
                     <Cards cards={this.props.cards} token={this.props.token}/>
                 </div>
