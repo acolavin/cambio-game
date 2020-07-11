@@ -33,10 +33,10 @@ def valid_move(gm, move, active):
     return False
 
 
-def broadcast_game_state(roomid):
+def broadcast_game_state(roomid, highlight=None):
     room = room_game_managers[roomid]
     for token, sid in room.secret2sid.items():
-        payload = dict(room.get_game_state(requesting_user_token=token),
+        payload = dict(room.get_game_state(requesting_user_token=token, highlight=highlight),
                        **{'room_and_token': {'roomid': roomid, 'user_token': token}})
         # app.logger.info(payload)
         emit('game_state',
@@ -169,11 +169,11 @@ def discard_card(data):
     room = room_game_managers[data['roomid']]
     if valid_move(room, 'discard_active_card', room.is_active_token(data['user_token'])):
 
-        room.active_player_discard(data['user_token'])
+        discard_id = room.active_player_discard(data['user_token'])
         emit('update_active_card', None)
         emit('game_log', "{name} discarded a card!".format(name=room.get_player_username(data['user_token'])),
              room=data['roomid'])
-        broadcast_game_state(data['roomid'])
+        broadcast_game_state(data['roomid'], highlight=discard_id)
 
 
 @socketio.on("default_card_action")
@@ -209,6 +209,8 @@ def default_card_action(data):
         if room.give_card(data['user_token'], data['card_id']):
             broadcast_game_state(data['roomid'])
     elif valid_move(room, 'keep_active_card', room.is_active_token(data['user_token'])):
-        if room.keep_card(data['user_token'], data['card_id']):
+        if discard_id := room.keep_card(data['user_token'], data['card_id']):
             emit('update_active_card', None)
-            broadcast_game_state(data['roomid'])
+            emit('game_log', "{user} is keeping their drawn card. Good good good.".format(user=card_owner),
+                 room=data['roomid'])
+            broadcast_game_state(data['roomid'], highlight=[data['card_id'], discard_id])

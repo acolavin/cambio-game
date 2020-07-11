@@ -44,7 +44,18 @@ class GameRoom extends React.Component {
         this.context.on("update_active_card", (data) => this.setState({...this.state, active_card: data}))
         this.context.on("game_state", (json) => {
             console.log(json)
-            this.setState({...this.state, ...json})});
+            this.setState({...this.state, ...json})
+        });
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+
+        if (this.state.last_discarded_card ? this.state.last_discarded_card.highlight : false) {
+            setTimeout(function () {
+                this.setState({last_discarded_card: {...this.state.last_discarded_card, ...{highlight: false}}})
+            }.bind(this), 500)
+        }
+        // add same timeout for player cards here...
     }
 
     render() {
@@ -78,7 +89,8 @@ class GameRoom extends React.Component {
                     <div className="decks">
                         <Deck token={this.state.room_and_token}/>
                         <Discard card={this.state.last_discarded_card ?
-                            this.state.last_discarded_card : {'suit': '', 'value':''}} token={this.state.room_and_token}/>
+                            this.state.last_discarded_card : {suit: '', value:'', highlight: false}}
+                                 token={this.state.room_and_token}/>
                     </div>
                     <div className="activeCard">
                         <ActiveCard card={this.state.active_card}
@@ -124,7 +136,7 @@ class Deck extends React.Component {
     static contextType = SocketContext;
 
     render() {
-        return <Card suit='Deck' value='' id="deck"
+        return <Card suit='Deck' value='' id="deck" highlight={false}
         func={() => {this.context.emit('draw', this.props.token)}}/>
 
     }
@@ -138,10 +150,10 @@ class Discard extends React.Component {
         {
             this.props.card.suit !== ''
                 ?
-                    <Card suit={this.props.card.suit} value={this.props.card.value}
+                    <Card suit={this.props.card.suit} value={this.props.card.value} highlight={this.props.card.highlight}
                     func={() => {this.context.emit('discard_card', this.props.token)}}/>
                 :
-                    <Card suit='DISCARD' value='DISCARD'
+                    <Card suit='DISCARD' value='DISCARD' highlight={false}
                           func={() => { this.context.emit('discard_card', this.props.token)}}/>
         }
     </div> }
@@ -159,14 +171,14 @@ class ActiveCard extends React.Component {
                 card
                     ?
                     <div className="actionCard">
-                        <Card suit={card.suit} value={card.value} id={card.id} func={() => true}/>
+                        <Card suit={card.suit} value={card.value} id={card.id} highlight={true} func={() => true}/>
                         <button className="cardButton" onClick={() => {
                             socket.emit(card.action, card.token)
                         }} disabled={card.action_string === ""}>{card.action_string}</button>
                     </div>
                     :
                     <div className="actionCard">
-                        <Card suit='' value='' id='' func={() => true}/>
+                        <Card suit='' value='' id='' highlight={false} func={() => true}/>
                         <button className="cardButton" disabled={true}>[Disabled]</button>
                     </div>
             }

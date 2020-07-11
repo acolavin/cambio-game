@@ -62,7 +62,7 @@ class GameManager(object):
         self._ready[username] = False
         return secret
 
-    def get_game_state(self, requesting_user_token):
+    def get_game_state(self, requesting_user_token, highlight=None):
 
         requesting_user = self.get_player_username(requesting_user_token)
         active_user = self.game.active_player if self.game is not None else None
@@ -81,7 +81,9 @@ class GameManager(object):
                              'active_user': name == active_user}
                 if name != requesting_user:
                     player_cards.append(dict(base_dict,
-                                           **{'cards': [serialize_card(c, hide=True) for c in cards]}))
+                                           **{'cards': [serialize_card(c,
+                                                                       hide=True,
+                                                                       highlight=GameManager.cardmatch(c, highlight)) for c in cards]}))
 
                 else:
                     if game_stage == 'initial_card_preview':
@@ -92,10 +94,14 @@ class GameManager(object):
                         hide_index = 0
 
                     player_cards.append(dict(base_dict,
-                                             **{'cards': [serialize_card(c, hide=i >= hide_index) for i, c in enumerate(cards)]}))
+                                             **{'cards': [serialize_card(c,
+                                                                         hide=i >= hide_index,
+                                                                         highlight=GameManager.cardmatch(c, highlight)) for i, c in enumerate(cards)]}))
         return {'game_state': player_cards,
                 'last_discarded_card': serialize_card(self.game.get_last_discarded(),
-                                                      hide=False) if self.game is not None else None}
+                                                      hide=False,
+                                                      highlight=GameManager.cardmatch(self.game.get_last_discarded(),
+                                                                                      highlight)) if self.game is not None else None}
 
     def start_game(self):
         if self.game is None:
@@ -140,7 +146,7 @@ class GameManager(object):
         else:
             self.set_game_stage('midgame_postdraw_nopower')
             pass
-        return dict(serialize_card(active_card, hide=False),
+        return dict(serialize_card(active_card, hide=False, highlight=True),
                     **{'action': action, 'action_string': action_string})
 
     def active_player_discard(self, token):
@@ -148,7 +154,7 @@ class GameManager(object):
             self.game.discard_active_card()
             self.game.end_turn()
             self.set_game_stage('midgame_predraw')
-
+            return self.game.get_last_discarded().id
         return
 
     def get_card_ownership(self, card_id):
@@ -166,7 +172,10 @@ class GameManager(object):
     def cardmatch(_c, _id):
         if _c is None:
             return False
-        return _c.id == _id
+        if isinstance(_id, list):
+            return _c.id in _id
+        else:
+            return _c.id == _id
 
     def attempt_discard_match(self, token, id):
         previous_stage = self.get_game_stage()
@@ -223,8 +232,7 @@ class GameManager(object):
             old_card = [c for c in self.game.player_cards[active_user] if c.id == id][0]
             self.game.player_cards[active_user] = [c if c.id != id else self.game._active_player_card for c in self.game.player_cards[active_user]]
             self.game._active_player_card = old_card
-            self.active_player_discard(token)
-            return True
+            return self.active_player_discard(token)
 
     def __init__(self):
         self._players = list()
@@ -240,14 +248,16 @@ class GameError(RuntimeError):
     pass
 
 
-def serialize_card(card, hide):
+def serialize_card(card, hide, highlight):
     if card is None:
-        return {'suit': '', 'value': '', 'id': ''}
+        return {'suit': '', 'value': '', 'id': '', 'highlight': highlight}
     if hide:
         return {'suit': HIDDEN_CARD,
                 'value': HIDDEN_CARD,
-                'id': card.id}
+                'id': card.id,
+                'highlight': highlight}
     else:
         return {'suit': card.suit.name,
                 'value': card.value.name,
-                'id': card.id}
+                'id': card.id,
+                'highlight': highlight}

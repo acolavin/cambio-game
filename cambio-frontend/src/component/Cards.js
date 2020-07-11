@@ -5,7 +5,7 @@ class Cards extends React.Component {
     render() {
         return this.props.cards.map((card, index) =>
             <div key={index}>
-                <Card suit={card.suit} value={card.value} id={card.id} token={this.props.token}/>
+                <Card suit={card.suit} value={card.value} id={card.id} highlight={card.highlight} token={this.props.token}/>
             </div>
         )
     }
@@ -28,6 +28,13 @@ class Card extends React.Component {
                 return "card-black"
         }
     }
+    getHighlight(highlight) {
+                if (highlight) {
+                    return ' item-highlight'
+                } else {
+                    return ''
+            }
+        }
 
     getValue(value) {
         switch (value) {
@@ -87,9 +94,17 @@ class Card extends React.Component {
 
     }
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (this.props.highlight) {
+            setTimeout(function () {
+                //this.state = {class : "Card " + this.getClass(this.props.suit)}
+            }.bind(this), 2000)
+        }
+    }
 
     render() {
-        return <div className={"Card " + this.getClass(this.props.suit)} onClick={this.handleClick}>
+        return <div className={"Card " + this.getClass(this.props.suit) + this.getHighlight(this.props.highlight)}
+                    onClick={this.handleClick}>
             <div className="CardLabel CardLabel-topLeft">
                 {this.getValue(this.props.value)}{this.getSuit(this.props.suit)}
             </div>
