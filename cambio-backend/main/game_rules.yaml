@@ -14,7 +14,7 @@ initial_card_preview:
     - wait_for_ready
 final_card_showcase:
   type: global
-  allows_actions:
+  allowed_actions:
     - indicate_ready_to_continue
   state_init:
     - show_cards_and_add_points

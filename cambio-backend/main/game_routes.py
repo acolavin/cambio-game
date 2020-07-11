@@ -158,8 +158,8 @@ def draw_card(data):
     if valid_move(room, 'draw_card', room.is_active_token(data['user_token'])):
         card = room.active_player_draw(data['user_token'])
         emit('update_active_card', card)
-    emit('game_log', "{name} drew a card!".format(name=room.get_player_username(data['user_token'])),
-         room=data['roomid'])
+        emit('game_log', "{name} drew a card!".format(name=room.get_player_username(data['user_token'])),
+             room=data['roomid'])
 
 
 @socketio.on('discard_card')
@@ -168,7 +168,7 @@ def discard_card(data):
         return None
     room = room_game_managers[data['roomid']]
     if valid_move(room, 'discard_active_card', room.is_active_token(data['user_token'])):
-        app.logger.info('Hello!')
+
         room.active_player_discard(data['user_token'])
         emit('update_active_card', None)
         emit('game_log', "{name} discarded a card!".format(name=room.get_player_username(data['user_token'])),
@@ -184,12 +184,21 @@ def default_card_action(data):
     card_owner = room.get_card_ownership(data['card_id'])
     if valid_move(room, 'attempt_discard_match', room.is_active_token(data['user_token'])) and card_owner is not None:
         self_name = room.get_player_username(data['user_token'])
-        emit('game_log', "{name1} attempted to discard {name2}''s card!".format(name1=self_name,
-                                                                                name2=card_owner),
-             room=data['roomid'])
 
-        if card_owner is not None:
-            if room.attempt_discard_match(data['user_token'], data['card_id']):
-                emit('game_log', "...Success!", room=data['roomid'])
+        if (result := room.attempt_discard_match(data['user_token'], data['card_id'])) is not None:
+            if self_name != card_owner:
+                t1 = "{name1} attempted to discard {name2}'s card!".format(name1=self_name,
+                                                                            name2=card_owner)
             else:
-                emit('game_log', "...Failed!", room=data['roomid'])
+                t1 = "{name1} attempted to discard their own card!".format(name1=self_name)
+
+            if result:
+                emit('game_log', t1 + "...Success!", room=data['roomid'])
+                broadcast_game_state(data['roomid'])
+            elif result is None:
+                pass
+            else:
+                emit('game_log', t1 + "...Failed!", room=data['roomid'])
+                broadcast_game_state(data['roomid'])
+        app.logger.info(room.get_game_stage())
+

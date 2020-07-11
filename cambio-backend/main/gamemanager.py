@@ -62,7 +62,7 @@ class GameManager(object):
         self._ready[username] = False
         return secret
 
-    def get_game_state(self, requesting_user_token=None):
+    def get_game_state(self, requesting_user_token):
 
         requesting_user = self.get_player_username(requesting_user_token)
         active_user = self._game.active_player if self._game is not None else None
@@ -153,7 +153,7 @@ class GameManager(object):
 
     def get_card_ownership(self, card_id):
         for player, cards in self._game.player_cards.items():
-            if card_id in [c.id for c in cards]:
+            if any([GameManager.cardmatch(c, card_id) for c in cards]):
                 return player
         return None
 
@@ -162,22 +162,32 @@ class GameManager(object):
             return self._game._card_id_registry[card_id]
         return None
 
+    @staticmethod
+    def cardmatch(_c, _id):
+        if _c is None:
+            return False
+        return _c.id != _id
+
     def attempt_discard_match(self, token, id):
-        previous_stage = self.get_game_state()
+
+        previous_stage = self.get_game_stage()
         self.set_game_stage('midgame_match_pause')
         attempter = self.get_player_username(token)
-        if self._game.get_last_discarded().value == self.get_card(id).value:
-            card_owner = self.get_card_ownership(id)
-            if self._game._cambio != card_owner:
-                self._game._discard.append(self.get_card(id))
-                self._game._player_cards[card_owner] = [c if c.id != id else None for c in self._game._player_cards[card_owner]]
-                if attempter == card_owner:
-                    self.set_game_stage(previous_stage)
-                return True
-        else:
-            self._game._player_cards[attempter].append(self._game.get_card_from_deck())
-
-
+        if (last_discard := self._game.get_last_discarded()) is not None:
+            if last_discard.value == self.get_card(id).value:
+                card_owner = self.get_card_ownership(id)
+                if self._game._cambio != card_owner:
+                    self._game._discard.append(self.get_card(id))
+                    self._game._player_cards[card_owner] = [c if GameManager.cardmatch(c, id) else None for c in self._game._player_cards[card_owner]]
+                    if attempter == card_owner:
+                        self.set_game_stage(previous_stage)
+                    return True
+            else:
+                self._game._player_cards[attempter].append(self._game.get_card_from_deck())
+                self.set_game_stage(previous_stage)
+                return False
+        self.set_game_stage(previous_stage)
+        return None
 
     def __init__(self):
         self._players = list()
