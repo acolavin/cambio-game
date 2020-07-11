@@ -3,8 +3,8 @@ import {SocketContext} from "./common";
 
 class Cards extends React.Component {
     render() {
-        return this.props.cards.map((card) =>
-            <div key={card.id}>
+        return this.props.cards.map((card, index) =>
+            <div key={index}>
                 <Card suit={card.suit} value={card.value} id={card.id} token={this.props.token}/>
             </div>
         )

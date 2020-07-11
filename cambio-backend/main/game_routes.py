@@ -182,23 +182,33 @@ def default_card_action(data):
         return None
     room = room_game_managers[data['roomid']]
     card_owner = room.get_card_ownership(data['card_id'])
-    if valid_move(room, 'attempt_discard_match', room.is_active_token(data['user_token'])) and card_owner is not None:
+    if card_owner is None:
+        return None
+    elif valid_move(room, 'attempt_discard_match', room.is_active_token(data['user_token'])):
         self_name = room.get_player_username(data['user_token'])
-
-        if (result := room.attempt_discard_match(data['user_token'], data['card_id'])) is not None:
-            if self_name != card_owner:
-                t1 = "{name1} attempted to discard {name2}'s card!".format(name1=self_name,
+        output2 = ""
+        if self_name != card_owner:
+            output1 = "{name1} attempted to discard {name2}'s card!".format(name1=self_name,
                                                                             name2=card_owner)
-            else:
-                t1 = "{name1} attempted to discard their own card!".format(name1=self_name)
-
+        else:
+            output1 = "{name1} attempted to discard their own card!".format(name1=self_name,
+                                                                            name2=card_owner)
+        if (result := room.attempt_discard_match(data['user_token'], data['card_id'])) is not None:
             if result:
-                emit('game_log', t1 + "...Success!", room=data['roomid'])
+                if room.get_game_stage() == 'midgame_match_pause':
+                    output2 = " Waiting for {name1} to give {name2} a card.".format(name1=self_name,
+                                                                                    name2=card_owner)
+                emit('game_log', output1 + "...Success!" + output2, room=data['roomid'])
                 broadcast_game_state(data['roomid'])
             elif result is None:
                 pass
             else:
-                emit('game_log', t1 + "...Failed!", room=data['roomid'])
+                emit('game_log', output1 + "...Failed!", room=data['roomid'])
                 broadcast_game_state(data['roomid'])
-        app.logger.info(room.get_game_stage())
-
+    elif valid_move(room, 'transfer_self_card', room.is_active_token(data['user_token'])):
+        if room.give_card(data['user_token'], data['card_id']):
+            broadcast_game_state(data['roomid'])
+    elif valid_move(room, 'keep_active_card', room.is_active_token(data['user_token'])):
+        if room.keep_card(data['user_token'], data['card_id']):
+            emit('update_active_card', None)
+            broadcast_game_state(data['roomid'])

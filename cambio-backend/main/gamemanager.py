@@ -11,7 +11,7 @@ class GameManager(object):
     _player2secret = None
     _secret2sid = None
     _secret2player = None
-    _game = None
+    game = None
     _ready = None
 
 
@@ -28,19 +28,19 @@ class GameManager(object):
         return self._secret2player if self._secret2player is not None else None
 
     def get_active_player(self):
-        return self._game.active_player if self._game is not None else None
+        return self.game.active_player if self.game is not None else None
 
     def is_active_token(self, token):
         return self.get_active_player() == self.secret2player[token]
 
     def get_game_stage(self):
-        if self._game is None:
+        if self.game is None:
             return 'pre_game'
         else:
-            return self._game.stage
+            return self.game.stage
 
     def set_game_stage(self, stage):
-        self._game.stage = stage
+        self.game.stage = stage
 
     def get_player_secret(self, username):
         return self._player2secret[username]
@@ -65,17 +65,17 @@ class GameManager(object):
     def get_game_state(self, requesting_user_token):
 
         requesting_user = self.get_player_username(requesting_user_token)
-        active_user = self._game.active_player if self._game is not None else None
+        active_user = self.game.active_player if self.game is not None else None
         game_stage = self.get_game_stage()
         app.logger.info("Active Player: " + str(active_user))
-        if self._game is None:
+        if self.game is None:
             player_cards = [{'name': user,
                              'cards': [],
                              'active_user': False,
                              'is_self': requesting_user == user} for user in self._players]
         else:
             player_cards = []
-            for name, cards in self._game.player_cards.items():
+            for name, cards in self.game.player_cards.items():
                 base_dict = {'name': name,
                              'is_self': requesting_user == name,
                              'active_user': name == active_user}
@@ -94,13 +94,13 @@ class GameManager(object):
                     player_cards.append(dict(base_dict,
                                              **{'cards': [serialize_card(c, hide=i >= hide_index) for i, c in enumerate(cards)]}))
         return {'game_state': player_cards,
-                'last_discarded_card': serialize_card(self._game.get_last_discarded(),
-                                                      hide=False) if self._game is not None else None}
+                'last_discarded_card': serialize_card(self.game.get_last_discarded(),
+                                                      hide=False) if self.game is not None else None}
 
     def start_game(self):
-        if self._game is None:
-            self._game = CambioGame(self._players)
-            self._game.deal()
+        if self.game is None:
+            self.game = CambioGame(self._players)
+            self.game.deal()
         else:
             raise GameError("Game already started.")
 
@@ -116,9 +116,9 @@ class GameManager(object):
 
     def active_player_draw(self, token):
         if self.is_active_token(token):
-            self._game.draw()
+            self.game.draw()
 
-        active_card = self._game.active_player_card
+        active_card = self.game.active_player_card
         action, action_string = '', '(this card has no power)'
 
         if active_card.value in SELF_PEAK_CARDS:
@@ -145,49 +145,86 @@ class GameManager(object):
 
     def active_player_discard(self, token):
         if self.is_active_token(token):
-            self._game.discard_active_card()
-            self._game.end_turn()
+            self.game.discard_active_card()
+            self.game.end_turn()
             self.set_game_stage('midgame_predraw')
 
         return
 
     def get_card_ownership(self, card_id):
-        for player, cards in self._game.player_cards.items():
+        for player, cards in self.game.player_cards.items():
             if any([GameManager.cardmatch(c, card_id) for c in cards]):
                 return player
         return None
 
     def get_card(self, card_id):
-        if card_id in self._game._card_id_registry:
-            return self._game._card_id_registry[card_id]
+        if card_id in self.game._card_id_registry:
+            return self.game._card_id_registry[card_id]
         return None
 
     @staticmethod
     def cardmatch(_c, _id):
         if _c is None:
             return False
-        return _c.id != _id
+        return _c.id == _id
 
     def attempt_discard_match(self, token, id):
-
         previous_stage = self.get_game_stage()
         self.set_game_stage('midgame_match_pause')
+        if previous_stage == 'midgame_match_pause':
+            return None
         attempter = self.get_player_username(token)
-        if (last_discard := self._game.get_last_discarded()) is not None:
+        # This should go into game object
+        if (last_discard := self.game.get_last_discarded()) is not None:
             if last_discard.value == self.get_card(id).value:
                 card_owner = self.get_card_ownership(id)
-                if self._game._cambio != card_owner:
-                    self._game._discard.append(self.get_card(id))
-                    self._game._player_cards[card_owner] = [c if GameManager.cardmatch(c, id) else None for c in self._game._player_cards[card_owner]]
+                if self.game._cambio != card_owner:
+                    self.game._discard.append(self.get_card(id))
+                    self.game._player_cards[card_owner] = [c if not GameManager.cardmatch(c, id) else None for c in self.game._player_cards[card_owner]]
                     if attempter == card_owner:
                         self.set_game_stage(previous_stage)
+                    elif len(self.game._player_cards[attempter]) == 0:
+                        self.set_game_stage(previous_stage)
+                    else:
+                        self.game._switchcard_player = (attempter, card_owner, previous_stage)
                     return True
             else:
-                self._game._player_cards[attempter].append(self._game.get_card_from_deck())
+                self.game._player_cards[attempter].append(self.game.get_card_from_deck())
                 self.set_game_stage(previous_stage)
                 return False
         self.set_game_stage(previous_stage)
         return None
+
+    def give_card(self, token, id):
+        attempter = self.get_player_username(token)
+        card_owner = self.get_card_ownership(id)
+        if self.game._switchcard_player is None:
+            return False
+        elif attempter != card_owner or attempter != self.game._switchcard_player[0]:
+            return False
+        self.game._player_cards[self.game._switchcard_player[1]].extend(
+            [c for c in self.game._player_cards[card_owner] if GameManager.cardmatch(c, id)])
+
+        self.game._player_cards[card_owner] = [c if not GameManager.cardmatch(c, id) else None for c in
+                                               self.game._player_cards[card_owner]]
+
+        self.set_game_stage(self.game._switchcard_player[2])
+        self.game._switchcard_player = None
+
+        return True
+
+    def keep_card(self, token, id):
+        active_user = self.get_active_player()
+        if not self.is_active_token(token):
+            return False
+        elif id not in [c.id for c in self.game.player_cards[active_user]]:
+            return False
+        if self.game._active_player_card is not None:
+            old_card = [c for c in self.game.player_cards[active_user] if c.id == id][0]
+            self.game.player_cards[active_user] = [c if c.id != id else self.game._active_player_card for c in self.game.player_cards[active_user]]
+            self.game._active_player_card = old_card
+            self.active_player_discard(token)
+            return True
 
     def __init__(self):
         self._players = list()

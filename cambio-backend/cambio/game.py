@@ -52,6 +52,7 @@ class CambioGame(object):
     _player_order = None
     _active_player_card = None
     _active_player = None
+    _switchcard_player = None
     _cambio = None
     _discard = None
     _gameover = False
