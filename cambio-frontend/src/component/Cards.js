@@ -28,13 +28,6 @@ class Card extends React.Component {
                 return "card-black"
         }
     }
-    getHighlight(highlight) {
-                if (highlight) {
-                    return ' item-highlight'
-                } else {
-                    return ''
-            }
-        }
 
     getValue(value) {
         switch (value) {
@@ -78,9 +71,15 @@ class Card extends React.Component {
         super(props);
 
         // This binding is necessary to make `this` work in the callback
+        this.state = {highlight_done: this.props.highlight ? ' item-highlight' : ''}
         this.handleClick = this.handleClick.bind(this);
   }
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (this.props.id !== prevProps.id) {
+            this.setState({highlight_done: this.props.highlight ? ' item-highlight' : ''})
+        }
+    }
 
     handleClick(e) {
         e.preventDefault();
@@ -94,16 +93,17 @@ class Card extends React.Component {
 
     }
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        if (this.props.highlight) {
-            setTimeout(function () {
-                //this.state = {class : "Card " + this.getClass(this.props.suit)}
-            }.bind(this), 2000)
-        }
-    }
+
 
     render() {
-        return <div className={"Card " + this.getClass(this.props.suit) + this.getHighlight(this.props.highlight)}
+        if (this.state.highlight_done !== '') {
+            setTimeout(() => {
+                this.setState({highlight_done: ''})
+            }, 500)
+
+        }
+
+        return <div className={"Card " + this.getClass(this.props.suit) + this.state.highlight_done}
                     onClick={this.handleClick}>
             <div className="CardLabel CardLabel-topLeft">
                 {this.getValue(this.props.value)}{this.getSuit(this.props.suit)}
