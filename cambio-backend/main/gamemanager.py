@@ -60,7 +60,27 @@ class GameManager(object):
         self._secret2player[secret] = username
         self._secret2sid[secret] = sid
         self._ready[username] = False
+        self._reveal[username] = None
         return secret
+
+    def toggle_reveal_card(self, username, card_id):
+        if self._reveal[username] is not None:
+            if self._reveal[username] != card_id:
+                return False
+            else:
+                self.game.discard_active_card()
+                self.end_turn(username)
+                return True
+        else:
+            self._reveal[username] = card_id
+            return True
+
+    def show_card(self, c, requesting_user):
+        if c is None:
+            return False
+        if c.id != self._reveal[requesting_user]:
+            return True
+        return False
 
     def get_game_state(self, requesting_user_token, highlight=None):
 
@@ -68,6 +88,7 @@ class GameManager(object):
         active_user = self.game.active_player if self.game is not None else None
         game_stage = self.get_game_stage()
         app.logger.info("Active Player: " + str(active_user))
+
         if self.game is None:
             player_cards = [{'name': user,
                              'cards': [],
@@ -82,7 +103,7 @@ class GameManager(object):
                 if name != requesting_user:
                     player_cards.append(dict(base_dict,
                                            **{'cards': [serialize_card(c,
-                                                                       hide=True,
+                                                                       hide=self.show_card(c, requesting_user),
                                                                        highlight=GameManager.cardmatch(c, highlight)) for c in cards]}))
 
                 else:
@@ -95,7 +116,7 @@ class GameManager(object):
 
                     player_cards.append(dict(base_dict,
                                              **{'cards': [serialize_card(c,
-                                                                         hide=i >= hide_index,
+                                                                         hide=i >= hide_index if self.show_card(c, requesting_user) else False,
                                                                          highlight=GameManager.cardmatch(c, highlight)) for i, c in enumerate(cards)]}))
         return {'game_state': player_cards,
                 'last_discarded_card': serialize_card(self.game.get_last_discarded(),
@@ -152,10 +173,14 @@ class GameManager(object):
     def active_player_discard(self, token):
         if self.is_active_token(token):
             self.game.discard_active_card()
-            self.game.end_turn()
-            self.set_game_stage('midgame_predraw')
+            self.end_turn(self.get_active_player())
             return self.game.get_last_discarded().id
         return
+
+    def end_turn(self, player):
+        self._reveal[player] = None
+        self.game.end_turn()
+        self.set_game_stage('midgame_predraw')
 
     def get_card_ownership(self, card_id):
         for player, cards in self.game.player_cards.items():
@@ -179,9 +204,9 @@ class GameManager(object):
 
     def attempt_discard_match(self, token, id):
         previous_stage = self.get_game_stage()
-        self.set_game_stage('midgame_match_pause')
         if previous_stage == 'midgame_match_pause':
             return None
+        self.set_game_stage('midgame_match_pause')
         attempter = self.get_player_username(token)
         # This should go into game object
         if (last_discard := self.game.get_last_discarded()) is not None:
@@ -189,13 +214,14 @@ class GameManager(object):
                 card_owner = self.get_card_ownership(id)
                 if self.game._cambio != card_owner:
                     self.game._discard.append(self.get_card(id))
+                    card_index = [i for i, c in enumerate(self.game._player_cards[card_owner]) if GameManager.cardmatch(c, id)][0]
                     self.game._player_cards[card_owner] = [c if not GameManager.cardmatch(c, id) else None for c in self.game._player_cards[card_owner]]
                     if attempter == card_owner:
                         self.set_game_stage(previous_stage)
                     elif len(self.game._player_cards[attempter]) == 0:
                         self.set_game_stage(previous_stage)
                     else:
-                        self.game._switchcard_player = (attempter, card_owner, previous_stage)
+                        self.game._switchcard_player = (attempter, card_owner, card_index, previous_stage)
                     return True
             else:
                 self.game._player_cards[attempter].append(self.game.get_card_from_deck())
@@ -211,20 +237,20 @@ class GameManager(object):
             return False
         elif attempter != card_owner or attempter != self.game._switchcard_player[0]:
             return False
-        self.game._player_cards[self.game._switchcard_player[1]].extend(
-            [c for c in self.game._player_cards[card_owner] if GameManager.cardmatch(c, id)])
+        self.game._player_cards[self.game._switchcard_player[1]][self.game._switchcard_player[2]] = \
+            [c for c in self.game._player_cards[card_owner] if GameManager.cardmatch(c, id)][0]
 
         self.game._player_cards[card_owner] = [c if not GameManager.cardmatch(c, id) else None for c in
                                                self.game._player_cards[card_owner]]
 
-        self.set_game_stage(self.game._switchcard_player[2])
+        self.set_game_stage(self.game._switchcard_player[3])
         self.game._switchcard_player = None
 
         return True
 
     def keep_card(self, token, id):
         active_user = self.get_active_player()
-        if not self.is_active_token(token):
+        if not self.is_active_token(token) or self._reveal[active_user] is not None:
             return False
         elif id not in [c.id for c in self.game.player_cards[active_user]]:
             return False
@@ -238,6 +264,7 @@ class GameManager(object):
         self._players = list()
         self._player2secret = dict()
         self._secret2player = dict()
+        self._reveal = dict()
         self._secret2sid = dict()
         self._ready = dict()
 
