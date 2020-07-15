@@ -8,6 +8,7 @@
     "@testing-library/user-event": "^7.2.1",
     "package-lock.json": "^1.0.0",
     "react": "^16.13.1",
+    "react-click-n-hold": "^1.0.7",
     "react-dom": "^16.13.1",
     "react-popupbox": "^2.0.8",
     "react-scripts": "3.4.1"

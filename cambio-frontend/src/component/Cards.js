@@ -1,11 +1,32 @@
 import React from "react";
 import {SocketContext} from "./common";
+import ClickNHold from 'react-click-n-hold';
 
 class Cards extends React.Component {
+    static contextType = SocketContext;
+
+    constructor(props) {
+        super(props);
+    }
+
     render() {
         return this.props.cards.map((card, index) =>
             <div key={index}>
-                <Card suit={card.suit} value={card.value} id={card.id} highlight={card.highlight} token={this.props.token}/>
+                <ClickNHold time={1}
+                            onEnd ={(e, enough) => {
+                                console.log('The card ' + card.id  + ' was clicked: ' + (enough ? '(long hold)' : '(short hold)' ));
+                                enough ?
+                                    this.context.emit("secondary_card_action", {...this.props.token,
+                                            card_id: card.id}) :
+                                this.context.emit("default_card_action", {...this.props.token,
+                                    card_id: card.id})}
+                            }>
+                    <Card suit={card.suit}
+                          value={card.value}
+                          id={card.id}
+                          highlight={card.highlight}
+                          token={this.props.token}/>
+                </ClickNHold>
             </div>
         )
     }
@@ -13,7 +34,7 @@ class Cards extends React.Component {
 
 
 class Card extends React.Component {
-    static contextType = SocketContext;
+
     getClass(suit) {
         switch (suit) {
             case "Spade":
@@ -72,27 +93,13 @@ class Card extends React.Component {
 
         // This binding is necessary to make `this` work in the callback
         this.state = {highlight_done: this.props.highlight ? ' item-highlight' : ''}
-        this.handleClick = this.handleClick.bind(this);
   }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (this.props.id !== prevProps.id) {
+        if (this.props.id !== prevProps.id || this.props.highlight !== prevProps.highlight) {
             this.setState({highlight_done: this.props.highlight ? ' item-highlight' : ''})
         }
     }
-
-    handleClick(e) {
-        e.preventDefault();
-        console.log('The card ' + this.props.id  + ' was clicked.');
-        if(this.props.func) {
-            this.props.func(this.props)
-        } else {
-            console.log(this.props)
-            this.context.emit("default_card_action", {...this.props.token, card_id: this.props.id})
-        }
-
-    }
-
 
 
     render() {
@@ -104,7 +111,7 @@ class Card extends React.Component {
         }
 
         return <div className={"Card " + this.getClass(this.props.suit) + this.state.highlight_done}
-                    onClick={this.handleClick}>
+                    onClick={this.props.onClick}>
             <div className="CardLabel CardLabel-topLeft">
                 {this.getValue(this.props.value)}{this.getSuit(this.props.suit)}
             </div>

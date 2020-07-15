@@ -11,6 +11,8 @@ import {
   PopupboxContainer
 } from 'react-popupbox';
 import "react-popupbox/dist/react-popupbox.css"
+import ClickNHold from 'react-click-n-hold';
+
 import {Card} from "./Cards";
 
 class GameRoom extends React.Component {
@@ -46,16 +48,6 @@ class GameRoom extends React.Component {
             console.log(json)
             this.setState({...this.state, ...json})
         });
-    }
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
-
-        if (this.state.last_discarded_card ? this.state.last_discarded_card.highlight : false) {
-            setTimeout(function () {
-                this.setState({last_discarded_card: {...this.state.last_discarded_card, ...{highlight: false}}})
-            }.bind(this), 500)
-        }
-        // add same timeout for player cards here...
     }
 
     render() {
@@ -134,10 +126,22 @@ class Napkin extends React.Component {
 
 class Deck extends React.Component {
     static contextType = SocketContext;
+    constructor(props) {
+        super(props);
+        this.handleClick = this.handleClick.bind(this);
+
+    }
+
+    handleClick(e) {
+        this.context.emit('draw', this.props.token)
+    }
 
     render() {
-        return <Card suit='Deck' value='' id="deck" highlight={false}
-        func={() => {this.context.emit('draw', this.props.token)}}/>
+
+        return (
+            <Card suit='Deck' value='' id="deck" highlight={false}
+                  onClick={this.handleClick} />
+        )
 
     }
 
@@ -145,18 +149,35 @@ class Deck extends React.Component {
 
 class Discard extends React.Component {
     static contextType = SocketContext;
+    constructor(props) {
+        super(props);
+        this.handleClick = this.handleClick.bind(this);
 
-    render() { return <div>
+    }
+
+    handleClick(e) {
+        this.context.emit('discard_card', this.props.token)
+    }
+
+    render() {
+
+        return <div>
         {
             this.props.card.suit !== ''
                 ?
-                    <Card suit={this.props.card.suit} value={this.props.card.value} highlight={this.props.card.highlight}
-                    func={() => {this.context.emit('discard_card', this.props.token)}}/>
+
+                    <Card suit={this.props.card.suit}
+                          value={this.props.card.value}
+                          highlight={this.props.card.highlight}
+                          id={this.props.card.id}
+                          onClick={this.handleClick}
+                    />
                 :
-                    <Card suit='DISCARD' value='DISCARD' highlight={false}
-                          func={() => { this.context.emit('discard_card', this.props.token)}}/>
+                    <Card suit='DISCARD' value='DISCARD' highlight={false} onClick={this.handleClick}/>
+
         }
-    </div> }
+        </div> }
+
 
 
 }
@@ -171,14 +192,16 @@ class ActiveCard extends React.Component {
                 card
                     ?
                     <div className="actionCard">
-                        <Card suit={card.suit} value={card.value} id={card.id} highlight={true} func={() => true}/>
+                        <Card suit={card.suit} value={card.value}
+                              id={card.id} highlight={true} func={() => true}/>
                         <button className="cardButton" onClick={() => {
                             socket.emit(card.action, card.token)
                         }} disabled={card.action_string === ""}>{card.action_string}</button>
                     </div>
                     :
                     <div className="actionCard">
-                        <Card suit='' value='' id='' highlight={false} func={() => true}/>
+                        <Card suit='' value='' id=''
+                              highlight={false} func={() => true}/>
                         <button className="cardButton" disabled={true}>[Disabled]</button>
                     </div>
             }
