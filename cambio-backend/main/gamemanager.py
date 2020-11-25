@@ -178,6 +178,7 @@ class GameManager(object):
         return
 
     def end_turn(self, player):
+        self._switcheroo = [None, None]
         self._reveal[player] = None
         self.game.end_turn()
         self.set_game_stage('midgame_predraw')
@@ -248,15 +249,54 @@ class GameManager(object):
 
         return True
 
+    def switch_propose_other_card(self, attempter, id):
+        card_owner = self.get_card_ownership(id)
+        if attempter == card_owner:
+            return False
+        self._switcheroo['other'] = id
+        return self.attempt_execute_switch(attempter)
+
+    def switch_propose_self_card(self, attempter, id):
+        card_owner = self.get_card_ownership(id)
+        if attempter != card_owner:
+            return False
+        self._switcheroo['self'] = id
+
+        return self.attempt_execute_switch(attempter)
+
+    def attempt_execute_switch(self, attempter):
+        if self._switcheroo['self'] and self._switcheroo['other']:
+            owner = self.get_card_ownership(self._switcheroo['self'])
+            victim = self.get_card_ownership(self._switcheroo['other'])
+            assert owner != victim
+            assert attempter == owner
+
+            other_card = self.get_card(self._switcheroo['other'])
+            self_card = self.get_card(self._switcheroo['self'])
+
+            def replace_if_match(card, replacement_card, id):
+                if card is None:
+                    return None
+                if card.id == id:
+                    return replacement_card
+                return card
+
+            self.game.player_cards[owner] = [replace_if_match(c, other_card, self_card.id) for c in self.game.player_cards[owner]]
+            self.game.player_cards[victim] = [replace_if_match(c, self_card, other_card.id) for c in self.game.player_cards[victim]]
+            self.end_turn(attempter)
+            return [self_card.id, other_card.id]
+        return False
+
     def keep_card(self, token, id):
         active_user = self.get_active_player()
+        active_player_cards = [c for c in self.game.player_cards[active_user] if c is not None]
         if not self.is_active_token(token) or self._reveal[active_user] is not None:
             return False
-        elif id not in [c.id for c in self.game.player_cards[active_user]]:
+        elif id not in [c.id for c in active_player_cards]:
             return False
         if self.game._active_player_card is not None:
-            old_card = [c for c in self.game.player_cards[active_user] if c.id == id][0]
-            self.game.player_cards[active_user] = [c if c.id != id else self.game._active_player_card for c in self.game.player_cards[active_user]]
+            old_card = [c for c in active_player_cards if c.id == id][0]
+            self.game.player_cards[active_user] = [c if c.id != id else self.game._active_player_card for c in active_player_cards ]
             self.game._active_player_card = old_card
             return self.active_player_discard(token)
 
@@ -267,6 +307,7 @@ class GameManager(object):
         self._reveal = dict()
         self._secret2sid = dict()
         self._ready = dict()
+        self._switcheroo = {'self': None, 'other': None}
 
 
 class GameError(RuntimeError):

@@ -11,7 +11,6 @@ import {
   PopupboxContainer
 } from 'react-popupbox';
 import "react-popupbox/dist/react-popupbox.css"
-import ClickNHold from 'react-click-n-hold';
 
 import {Card} from "./Cards";
 

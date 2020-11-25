@@ -57,7 +57,7 @@ midgame_player_postdraw_910:
   active_allowed_actions:
     - discard_active_card
     - attempt_discard_match
-    - peek_self_card
+    - peek_other_card
     - keep_active_card
     - indicate_ready_to_continue
 midgame_player_postdraw_jq:
