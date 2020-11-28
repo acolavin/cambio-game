@@ -27,6 +27,9 @@ def attempt_to_join_game(json):
         if room_game_managers[roomid].username_taken(proposed_username):
             emit('game_log', "Username %s taken in room %s!" % (proposed_username, roomid))
             return
+        elif room_game_managers[roomid].game is not None:
+            emit('game_log', "Game in room %s has already started!" % (roomid))
+            return
     else:
         room_game_managers[roomid] = GameManager()
     token = room_game_managers[roomid].add_player(proposed_username, flask.request.sid)
