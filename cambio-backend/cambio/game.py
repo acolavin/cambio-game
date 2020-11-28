@@ -104,24 +104,9 @@ class CambioGame(object):
                 self._player_cards[player].append(self.get_card_from_deck())
         self._stage = "initial_card_preview"
 
-    def pregame_show(self):
-        for player, cards in self._player_cards.items():
-            for card_index in range(2):
-                cards[card_index].show()
-
-    def pregame_hide(self):
-        for player, cards in self._player_cards.items():
-            for card in cards:
-                card.hide()
-
     def draw(self):
         assert self._active_player_card is None
         self._active_player_card = self.get_card_from_deck()
-
-    def switch_self(self, card_index):
-        existing_card = self._player_cards[self._active_player][card_index]
-        self._player_cards[self._active_player][card_index] = self._active_player_card
-        self._discard.append(existing_card)
 
     def discard_active_card(self):
         self._discard.append(self._active_player_card)
@@ -132,29 +117,6 @@ class CambioGame(object):
             return None
         else:
             return self._discard[-1]
-
-    def peak_self(self, card_index):
-        assert self._active_player_card.value in SELF_PEAK_CARDS
-        card_of_interest = self._player_cards[self._active_player][card_index]
-        card_of_interest.show()
-
-    def peak_other(self, player_id, card_index):
-        assert self._active_player_card.value in OTHER_PEAK_CARDS or is_black_king(self._active_player_card)
-        self._player_cards[player_id][card_index].show()
-
-    def blind_swap(self, other_player_id, self_card_index, other_card_index):
-        active_card = self._active_player_card
-        assert active_card.value in BLIND_SWAP_CARDS or is_black_king(active_card), "Invalid card!"
-        assert self._cambio != other_player_id, "Player called cambio, you can't do that! "
-        self_card = self._player_cards[self._active_player][self_card_index]
-        other_card = self._player_cards[other_player_id][other_card_index]
-        self._player_cards[self._active_player][self_card_index] = other_card
-        self._player_cards[other_player_id][other_card_index] = self_card
-
-    # operationally, the non-blind swap is actually a peak_other then a blind_swap with an action in-between.
-
-    def call_cambio(self):
-        self._cambio = self._active_player
 
     def end_turn(self):
         # revolve the next player:

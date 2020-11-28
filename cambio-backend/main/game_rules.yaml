@@ -40,6 +40,7 @@ midgame_postdraw_nopower:
   active_allowed_actions:
     - discard_active_card
     - keep_active_card
+
 midgame_player_postdraw_78:
   type: player
   inactive_allowed_actions:
@@ -49,7 +50,6 @@ midgame_player_postdraw_78:
     - attempt_discard_match
     - peek_self_card
     - keep_active_card
-    - indicate_ready_to_continue
 midgame_player_postdraw_910:
   type: player
   inactive_allowed_actions:
@@ -59,8 +59,14 @@ midgame_player_postdraw_910:
     - attempt_discard_match
     - peek_other_card
     - keep_active_card
-    - indicate_ready_to_continue
-midgame_player_postdraw_jq:
+midgame_player_postreveal_78910:
+  type: player
+  inactive_allowed_actions:
+    - attempt_discard_match
+  active_allowed_actions:
+    - discard_active_card
+
+midgame_player_postdraw_jqk:
   type: player
   inactive_allowed_actions:
     - attempt_discard_match
@@ -69,12 +75,11 @@ midgame_player_postdraw_jq:
     - attempt_discard_match
     - switch_self_other_card
     - keep_active_card
-midgame_active_player_postdraw_blackking:
+midgame_player_postselect_jqk:
   type: player
-  active_allowed_actions:
-    - discard_active_card
+  inactive_allowed_actions:
     - attempt_discard_match
-    - peak_other_card
-    - indicate_ready_to_continue
+  active_allowed_actions:
+    - attempt_discard_match
+    - discard_active_card
     - switch_self_other_card
-    - keep_active_card

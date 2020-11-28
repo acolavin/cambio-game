@@ -193,15 +193,11 @@ class ActiveCard extends React.Component {
                     <div className="actionCard">
                         <Card suit={card.suit} value={card.value}
                               id={card.id} highlight={true} func={() => true}/>
-                        <button className="cardButton" onClick={() => {
-                            socket.emit(card.action, card.token)
-                        }} disabled={card.action_string === ""}>{card.action_string}</button>
                     </div>
                     :
                     <div className="actionCard">
                         <Card suit='' value='' id=''
                               highlight={false} func={() => true}/>
-                        <button className="cardButton" disabled={true}>[Disabled]</button>
                     </div>
             }
         </div>

@@ -39,9 +39,16 @@ def broadcast_game_state(roomid, highlight=None):
         payload = dict(room.get_game_state(requesting_user_token=token, highlight=highlight),
                        **{'room_and_token': {'roomid': roomid, 'user_token': token}})
         emit('game_state', payload, room=sid)
-        if room.is_active_token(token):
-            from .gamemanager import serialize_card
-            emit('update_active_card', serialize_card(room.game.active_player_card, False, True))
+
+    update_button(roomid,
+                  active_player={'target': 'call_cambio',
+                                 'text': 'CAMBIO!',
+                                 'disabled': False},
+                  inactive_player={'target': '',
+                                   'text': 'CAMBIO!',
+                                   'disabled': True})
+    if room.gameover():
+        emit('game_log', "!!GAME OVER!!!", room=roomid)
 
 
 def valid_data(data):
@@ -67,12 +74,12 @@ def user_is_ready(data):
     if room.all_players_ready():
         if room.get_game_stage() == 'initial_card_preview':
             update_button(data['roomid'],
-                          active_player={'target': '',
-                                         'text': '(draw a card!).',
-                                         'disabled': True},
+                          active_player={'target': 'call_cambio',
+                                         'text': 'CAMBIO!',
+                                         'disabled': False},
                           inactive_player={'target': '',
-                                         'text': '(no action available).',
-                                         'disabled': True})
+                                           'text': 'CAMBIO!',
+                                           'disabled': True})
 
             room.set_game_stage('midgame_predraw')
             broadcast_game_state(data['roomid'])
@@ -166,10 +173,9 @@ def discard_card(data):
     if not valid_data(data):
         return None
     room = room_game_managers[data['roomid']]
-    active_player = room.get_player_username(data['user_token'])
-    if valid_move(room, 'discard_active_card', room.is_active_token(data['user_token'])) and room._reveal[active_player] is None:
+    if valid_move(room, 'discard_active_card', room.is_active_token(data['user_token'])):
 
-        discard_id = room.active_player_discard(data['user_token'])
+        discard_id = room.active_player_discard_and_end_turn(data['user_token'])
 
         emit('update_active_card', None)
         emit('game_log', "{name} discarded a card!".format(name=room.get_player_username(data['user_token'])),
@@ -187,7 +193,7 @@ def default_card_action(data):
     app.logger.info('Default action for card ' + str(data['card_id']) + ' room state ' + room.get_game_stage())
     card_owner = room.get_card_ownership(data['card_id'])
     self_name = room.get_player_username(data['user_token'])
-    if card_owner is None:
+    if card_owner is None or room.gameover():
         return None
     elif valid_move(room, 'keep_active_card', room.is_active_token(data['user_token'])):
 
@@ -219,6 +225,8 @@ def default_card_action(data):
     elif valid_move(room, 'transfer_self_card', room.is_active_token(data['user_token'])):
         if room.give_card(data['user_token'], data['card_id']):
             broadcast_game_state(data['roomid'])
+    else:
+        app.logger.error("Unhandled default card action.")
 
 
 @socketio.on("secondary_card_action")
@@ -233,37 +241,45 @@ def secondary_card_action(data):
     app.logger.info('Secondary action for card ' + str(data['card_id']) + ' room state ' + room.get_game_stage())
     card_owner = room.get_card_ownership(data['card_id'])
     self_name = room.get_player_username(data['user_token'])
+    if data['card_id'] is None or room.gameover():
+        return None
+
     if valid_move(room, 'peek_self_card', room.is_active_token(data['user_token'])):
         app.logger.info('Attempt peak self card')
         if handle_78(room, self_name, data['card_id'], card_owner):
             emit('game_log', f"{self_name} is peaking at {card_owner}'s card!", room=roomid)
+            room.set_game_stage('midgame_player_postreveal_78910')
             broadcast_game_state(roomid, highlight=[data['card_id']])
     if valid_move(room, 'peek_other_card', room.is_active_token(data['user_token'])):
         if handle_910(room, self_name, data['card_id'], card_owner):
             emit('game_log', f"{self_name} is peaking at their own card!", room=roomid)
+            room.set_game_stage('midgame_player_postreveal_78910')
             broadcast_game_state(roomid, highlight=[data['card_id']])
     if valid_move(room, 'switch_self_other_card', room.is_active_token(data['user_token'])):
-        if to_highlight := handle_jq(room, self_name, data['card_id'], card_owner):
+        if (to_highlight := handle_jqk(room, self_name, data['card_id'], card_owner)):
+
             emit('game_log', f"{self_name} is switching cards!", room=roomid)
             broadcast_game_state(roomid, highlight=to_highlight)
+            if len(to_highlight) == 2:
+                emit('update_active_card', None)
     return
 
 
 def handle_78(room, self_name, data_card_id, card_owner):
-    if self_name != card_owner:
+    if self_name != card_owner or data_card_id is None:
         return None
 
     return room.toggle_reveal_card(self_name, data_card_id)
 
 
 def handle_910(room, self_name, data_card_id, card_owner):
-    if self_name == card_owner:
+    if self_name == card_owner or data_card_id is None:
         return None
 
     return room.toggle_reveal_card(self_name, data_card_id)
 
 
-def handle_jq(room, self_name, data_card_id, card_owner):
+def handle_jqk(room, self_name, data_card_id, card_owner):
     """
 
     Parameters
@@ -277,11 +293,24 @@ def handle_jq(room, self_name, data_card_id, card_owner):
     -------
 
     """
+
     if self_name == card_owner:
-        done = room.switch_propose_self_card(self_name, data_card_id)
+        done = room.select_and_switch_propose_self_card(self_name, data_card_id)
     else:
-        done = room.switch_propose_other_card(self_name, data_card_id)
-    if done:
-        return
-    else:
-        return list()
+        done = room.select_and_switch_propose_other_card(self_name, data_card_id)
+    return [_ for _ in done if _ is not None]
+
+
+@socketio.on("call_cambio")
+def call_cambio(data):
+    if not valid_data(data):
+        app.logger.info('No appropriate secondary action')
+        return None
+
+    roomid = data['roomid']
+    room = room_game_managers[roomid]
+    app.logger.info('Calling cambio!')
+    success = room.call_cambio(data['user_token'])
+    if success:
+        broadcast_game_state(roomid)
+        emit('update_active_card', None)

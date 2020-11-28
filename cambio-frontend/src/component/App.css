@@ -200,6 +200,11 @@
   animation: yellowfade .5s;
 }
 
+.item-select {
+  border: 2px red solid;
+}
+
+
 @keyframes fill {
   to {
     background-size: 100% 0;
@@ -210,5 +215,5 @@
   background: linear-gradient( white , white) rgb(255,215,235) no-repeat 0 0;
   mix-blend-mode: multiply;
   background-size: 100% 100%;
-  animation: fill 2s forwards;
+  animation: fill 1s forwards;
 }
