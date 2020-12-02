@@ -12,7 +12,7 @@ class Cards extends React.Component {
     render() {
         return this.props.cards.map((card, index) =>
             <div key={index}>
-                <ClickNHold time={1}
+                <ClickNHold time={.25}
                             onEnd ={(e, enough) => {
                                 console.log('The card ' + card.id  + ' was clicked: ' + (enough ? '(long hold)' : '(short hold)' ));
                                 enough ?

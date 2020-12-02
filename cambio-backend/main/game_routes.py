@@ -48,7 +48,7 @@ def broadcast_game_state(roomid, highlight=None):
                                    'text': 'CAMBIO!',
                                    'disabled': True})
     if room.gameover():
-        emit('game_log', "!!GAME OVER!!!", room=roomid)
+        emit('game_log', "!!GAME OVER!!! Melissa wins. TODO: Don't hard code this in...", room=roomid)
 
 
 def valid_data(data):
