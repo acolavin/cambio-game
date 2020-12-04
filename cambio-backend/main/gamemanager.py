@@ -1,4 +1,5 @@
 import hashlib
+import datetime
 import random
 from ..cambio.game import CambioGame, SELF_PEAK_CARDS, OTHER_PEAK_CARDS, BLIND_SWAP_CARDS, is_black_king
 from ..app import app
@@ -13,6 +14,7 @@ class GameManager(object):
     _secret2player = None
     game = None
     _ready = None
+    last_action = None
 
 
     @property
@@ -299,6 +301,7 @@ class GameManager(object):
         self._secret2sid = dict()
         self._ready = dict()
         self._switcheroo = INIT_SWITCHEROO
+        self.last_action = datetime.datetime.now()
 
 
 class GameError(RuntimeError):

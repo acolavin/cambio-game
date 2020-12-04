@@ -197,7 +197,7 @@
 }
 
 .item-highlight {
-  animation: yellowfade .5s;
+  animation: yellowfade 1s;
 }
 
 .item-select {

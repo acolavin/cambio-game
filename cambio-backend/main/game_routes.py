@@ -1,4 +1,5 @@
 from flask_socketio import emit, join_room
+import datetime
 from ..app import socketio, app, room_game_managers
 from . import gamemanager
 from . import GAME_RULES
@@ -58,6 +59,13 @@ def valid_data(data):
         return False
     if data['user_token'] not in room_game_managers[data['roomid']].secret2sid:
         return False
+
+    room = room_game_managers[data['roomid']]
+    if (datetime.datetime.now() - room.last_action).total_seconds() < 0.5:
+        return False
+
+    room.last_action = datetime.datetime.now()
+
     return True
 
 
@@ -247,12 +255,12 @@ def secondary_card_action(data):
     if valid_move(room, 'peek_self_card', room.is_active_token(data['user_token'])):
         app.logger.info('Attempt peak self card')
         if handle_78(room, self_name, data['card_id'], card_owner):
-            emit('game_log', f"{self_name} is peaking at {card_owner}'s card!", room=roomid)
+            emit('game_log', f"{self_name} is peaking at their own card!", room=roomid)
             room.set_game_stage('midgame_player_postreveal_78910')
             broadcast_game_state(roomid, highlight=[data['card_id']])
     if valid_move(room, 'peek_other_card', room.is_active_token(data['user_token'])):
         if handle_910(room, self_name, data['card_id'], card_owner):
-            emit('game_log', f"{self_name} is peaking at their own card!", room=roomid)
+            emit('game_log', f"{self_name} is peaking at {card_owner}'s card!", room=roomid)
             room.set_game_stage('midgame_player_postreveal_78910')
             broadcast_game_state(roomid, highlight=[data['card_id']])
     if valid_move(room, 'switch_self_other_card', room.is_active_token(data['user_token'])):
