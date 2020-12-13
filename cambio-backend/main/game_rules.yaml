@@ -40,7 +40,6 @@ midgame_postdraw_nopower:
   active_allowed_actions:
     - discard_active_card
     - keep_active_card
-
 midgame_player_postdraw_78:
   type: player
   inactive_allowed_actions:
@@ -80,6 +79,5 @@ midgame_player_postselect_jqk:
   inactive_allowed_actions:
     - attempt_discard_match
   active_allowed_actions:
-    - attempt_discard_match
     - discard_active_card
     - switch_self_other_card

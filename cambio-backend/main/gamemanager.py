@@ -15,6 +15,7 @@ class GameManager(object):
     game = None
     _ready = None
     last_action = None
+    last_card_match = None
 
 
     @property
@@ -210,6 +211,7 @@ class GameManager(object):
                         self.set_game_stage(previous_stage)
                     else:
                         self.game._switchcard_player = (attempter, card_owner, card_index, previous_stage)
+                    self.last_card_match = self.get_card(id)
                     return True
             else:
                 self.game._player_cards[attempter].append(self.game.get_card_from_deck())

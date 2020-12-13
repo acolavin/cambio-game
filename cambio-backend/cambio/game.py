@@ -95,8 +95,12 @@ class CambioGame(object):
 
     def get_card_from_deck(self):
         if not len(self._deck):
-            self._deck = [self._discard[i] for i in np.random.permutation(range(len(self._discard)))]
-        return self._deck.pop()
+            self._deck = [self._discard[i] for i in np.random.permutation(range(len(self._discard)-1))]
+            self._discard = self.discard[-1:]
+        if len(self._deck):
+            return self._deck.pop()
+        else:
+            return list()
 
     def deal(self):
         for _ in range(4):

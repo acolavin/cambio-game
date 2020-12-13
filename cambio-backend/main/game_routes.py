@@ -52,7 +52,7 @@ def broadcast_game_state(roomid, highlight=None):
         emit('game_log', "!!GAME OVER!!! Melissa wins. TODO: Don't hard code this in...", room=roomid)
 
 
-def valid_data(data):
+def valid_data(data, limiting=True):
     if not all([k in data for k in ['roomid', 'user_token']]):
         return False
     if data['roomid'] not in room_game_managers:
@@ -61,7 +61,7 @@ def valid_data(data):
         return False
 
     room = room_game_managers[data['roomid']]
-    if (datetime.datetime.now() - room.last_action).total_seconds() < 0.5:
+    if (datetime.datetime.now() - room.last_action).total_seconds() < 0.2 and limiting:
         return False
 
     room.last_action = datetime.datetime.now()
@@ -71,7 +71,7 @@ def valid_data(data):
 
 @socketio.on('ready')
 def user_is_ready(data):
-    if not valid_data(data):
+    if not valid_data(data, limiting=False):
         return None
     app.logger.info(data)
     room = room_game_managers[data['roomid']]
@@ -115,7 +115,7 @@ def update_button(roomid, active_player=None, inactive_player=None):
 
 @socketio.on('joined_room')
 def join_game(json):
-    if not valid_data(json):
+    if not valid_data(json, limiting=False):
         app.logger.info(json)
         app.logger.critical("Attempt to join game with invalid data!")
         return False
@@ -138,7 +138,7 @@ def join_game(json):
 
 @socketio.on('start_game')
 def start_game(data):
-    if not valid_data(data):
+    if not valid_data(data, limiting=False):
         return False
     gm = room_game_managers[data['roomid']]
     if not valid_move(gm, 'start_game', gm.is_active_token(data['user_token'])):
@@ -212,13 +212,18 @@ def default_card_action(data):
             broadcast_game_state(data['roomid'], highlight=[data['card_id'], discard_id])
     elif valid_move(room, 'attempt_discard_match', room.is_active_token(data['user_token'])):
         output2 = ""
+
         if self_name != card_owner:
             output1 = "{name1} attempted to discard {name2}'s card!".format(name1=self_name,
                                                                             name2=card_owner)
         else:
             output1 = "{name1} attempted to discard their own card!".format(name1=self_name,
                                                                             name2=card_owner)
-        if (result := room.attempt_discard_match(data['user_token'], data['card_id'])) is not None:
+
+        if room.last_card_match == room.game.get_last_discarded():
+            emit('game_log', output1 + "...Failed ! Only one match allowed at a time!", room=data['roomid'])
+            broadcast_game_state(data['roomid'], highlight=data['card_id'])
+        elif (result := room.attempt_discard_match(data['user_token'], data['card_id'])) is not None:
             if result:
                 if room.get_game_stage() == 'midgame_match_pause':
                     output2 = " Waiting for {name1} to give {name2} a card.".format(name1=self_name,
