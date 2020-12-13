@@ -204,12 +204,13 @@ def default_card_action(data):
     if card_owner is None or room.gameover():
         return None
     elif valid_move(room, 'keep_active_card', room.is_active_token(data['user_token'])):
-
+        active_card_id = room.game._active_player_card.id
         if discard_id := room.keep_card(data['user_token'], data['card_id']):
             emit('update_active_card', None)
             emit('game_log', "{user} is keeping their drawn card. Good good good.".format(user=card_owner),
                  room=data['roomid'])
-            broadcast_game_state(data['roomid'], highlight=[data['card_id'], discard_id])
+            broadcast_game_state(data['roomid'], highlight=[data['card_id'], discard_id,
+                                                            active_card_id])
     elif valid_move(room, 'attempt_discard_match', room.is_active_token(data['user_token'])):
         output2 = ""
 
@@ -326,4 +327,6 @@ def call_cambio(data):
     success = room.call_cambio(data['user_token'])
     if success:
         broadcast_game_state(roomid)
+        self_name = room.get_player_username(data['user_token'])
+        emit('game_log', f"{self_name} is switching cards!", room=roomid)
         emit('update_active_card', None)

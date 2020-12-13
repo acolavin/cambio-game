@@ -155,6 +155,7 @@
 .loginButton {
   display:inline-block;
   margin: auto;
+
   flex: 1
 }
 .loginForm {
